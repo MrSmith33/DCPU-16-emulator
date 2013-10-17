@@ -1,7 +1,7 @@
 module main;
 
 import std.stdio;
-import dcpu;
+import dcpu.dcpu;
 
 void main()
 {
