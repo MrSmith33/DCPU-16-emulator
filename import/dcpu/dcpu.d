@@ -1,7 +1,11 @@
 module dcpu.dcpu;
 
+import std.algorithm : fill;
+
+@safe nothrow:
+
 /// DCPU-16 memory and registers storage.
-struct DcpuData
+struct Dcpu
 {
 	ushort[8]	reg;
 	ushort		pc;
@@ -13,7 +17,7 @@ struct DcpuData
 }
 
 /// Resets dcpu to its initial state.
-void reset(DcpuData data)
+void reset(Dcpu data)
 {
 	data.reg = [0, 0, 0, 0, 0, 0, 0, 0];
 	data.pc = 0;

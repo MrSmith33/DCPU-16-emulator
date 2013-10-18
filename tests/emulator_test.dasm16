@@ -1,0 +1,46 @@
+;TESTING OPERATORS
+;SET
+SET [results + 0], 0x1234 ;test SET assert(r0 == 0x1234)
+;ADD
+ADD [results + 1], 15 ;test ADD without overflow assert(r1 == 15)
+SET [results + 2], EX ;save ex, assert(ex == 0)
+SET [results + 3], 0x1234
+ADD [results + 3], 0xFFFF ;test ADD with overflow assert(r3 == 1233 && ex == 1)
+SET [results + 4], EX ;save ex, assert(ex == 1)
+;SUB
+SUB [results + 5], 0x1234 ;test SUB with underflow {0-0x1234}assert(r5 == 0xEDCC)
+SET [results + 6], EX ;save ex, assert(ex == 0xFFFF)
+SET [results + 7], 0x1234
+SUB [results + 7], 0xDEA ;assert(r7 == 0x44A)
+SET [results + 8], EX ;save ex, assert(ex == 0x0000)
+;MUL
+SET [results + 9], 0x1234
+MUL [results + 9], 2; assert(r9==0x2468)
+SET [results + 10], EX ; ex==0x0
+SET [results + 11], 0xFFFF
+MUL [results + 11], 2; assert(r11==0x1)
+SET [results + 12], EX ; ex==FFFE
+;MLI
+;DIV
+;DVI
+;MOD
+;MDI
+;AND
+;BOR
+;XOR
+;SHR
+;ASR
+;SHL
+;IFB
+;IFC
+;IFE
+;IFN
+;IFG
+;IFA
+;IFL
+;IFU
+;ADX
+;SBX
+;STI
+;STD
+results:
