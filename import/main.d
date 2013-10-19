@@ -18,6 +18,7 @@ void main()
 
 	writeln(em.dcpu.mem.length);
 	printMem(48, 63, 8, em.dcpu);
+	writeln("Cycles: ", em.cycles);
 	
 	//writefln("%x",(cast(short)0x1234*cast(short)-2));
 }
