@@ -46,10 +46,10 @@ private:
 		{
 			case 0x00: assert(false); // Special opcode. Execution never goes here.
 			case 0x01: result = a; break; // SET
-			case 0x02: result = a + b; dcpu.ex = result >> 16; break; // ADD
-			case 0x03: result = a - b; dcpu.ex = result >> 16; break; // SUB
-			case 0x04: result = a * b; dcpu.ex = result >> 16; break; // MUL
-			case 0x05: result = cast(short)a * cast(short)b; dcpu.ex = result >> 16; break; // MLI TODO:test
+			case 0x02: result = b + a; dcpu.ex = result >> 16; break; // ADD
+			case 0x03: result = b - a; dcpu.ex = (a > b) ? 0xFFFF : 0; break; // SUB
+			case 0x04: result = b * a; dcpu.ex = result >> 16; break; // MUL
+			case 0x05: result = cast(short)a * cast(short)b; dcpu.ex = result >> 16; break; // MLI
 			case 0x06: if (a==0){dcpu.ex = 0; result = 0;}
 						else {result = b/a; dcpu.ex = ((b << 16)/a) & 0xffff;} break; // DIV TODO:test
 			case 0x07: if (a==0){dcpu.ex = 0; result = 0;}
@@ -101,7 +101,7 @@ private:
 		ushort a = *getOperand!true(instruction >> 10);
 
 		ushort opcode = (instruction >> 5) & 0x1F;
-		
+
 	}
 
 	/++
@@ -142,8 +142,8 @@ private:
 	ushort* getOperand(bool isA)(ushort instr) @safe
 	in
 	{
-		assert(instr < 0x40, "operand must be lower than 0x40");
-		static if (isA)
+		assert(instr <= 0x3f, "operand must be lower than 0x40");
+		static if (!isA)
 			assert(instr <= 0x1f);
 	}
 	body
@@ -195,13 +195,13 @@ private static ushort[0x20] literals =
 
 /// Table of basic instructions cost.
 private static ubyte[] basicCycles = 
-[0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1,
- 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 3, 3, 0, 0, 2, 2];
+	[0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1,
+	 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 3, 3, 0, 0, 2, 2];
 
 /// Table of special instructions cost.
 private static ubyte[] specialCycles = 
-[0, 3, 0, 0, 0, 0, 0, 0, 4, 1, 1, 3, 2, 0, 0, 0,
- 2, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+	[0, 3, 0, 0, 0, 0, 0, 0, 4, 1, 1, 3, 2, 0, 0, 0,
+	 2, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 unittest
 {

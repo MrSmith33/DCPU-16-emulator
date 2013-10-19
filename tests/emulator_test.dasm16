@@ -18,9 +18,14 @@ SET [results + 9], 0x1234
 MUL [results + 9], 2; assert(r9==0x2468)
 SET [results + 10], EX ; ex==0x0
 SET [results + 11], 0xFFFF
-MUL [results + 11], 2; assert(r11==0x1)
-SET [results + 12], EX ; ex==FFFE
+MUL [results + 11], 2; assert(r11==0xFFFE)
+SET [results + 12], EX ; ex==1
 ;MLI
+
+SET [results + 13], 0x1234
+MLI [results + 13], -2 ;assert(r13 == 0xdb98)
+SET [results + 14], EX ; assert(ex==0xFFFF)
+
 ;DIV
 ;DVI
 ;MOD
@@ -43,4 +48,4 @@ SET [results + 12], EX ; ex==FFFE
 ;SBX
 ;STI
 ;STD
-results:
+:results
