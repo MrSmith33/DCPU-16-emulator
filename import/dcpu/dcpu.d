@@ -2,6 +2,8 @@ module dcpu.dcpu;
 
 import std.algorithm : fill;
 
+import dcpu.devices.idevice;
+
 @safe nothrow:
 
 /// DCPU-16 memory and registers storage.
@@ -14,6 +16,15 @@ struct Dcpu
 	ushort		ia;
 
 	ushort[0x10000] mem;
+	
+	private nextHardwareId = 0;
+	IDevice[ushort] devices;
+
+	ushort attachDevice(IDevice device)
+	{
+		devices[nextHardwareId] = device;
+		return nextHardwareId++;
+	}
 }
 
 /// Resets dcpu to its initial state.

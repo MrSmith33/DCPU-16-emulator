@@ -4,12 +4,14 @@ SET [results + 0], 0x1234 ;test SET assert(r0 == 0x1234)
 ;ADD
 ADD [results + 1], 15 ;test ADD without overflow assert(r1 == 15)
 SET [results + 2], EX ;save ex, assert(ex == 0)
+
 SET [results + 3], 0x1234
 ADD [results + 3], 0xFFFF ;test ADD with overflow assert(r3 == 1233 && ex == 1)
 SET [results + 4], EX ;save ex, assert(ex == 1)
 ;SUB
 SUB [results + 5], 0x1234 ;test SUB with underflow {0-0x1234}assert(r5 == 0xEDCC)
 SET [results + 6], EX ;save ex, assert(ex == 0xFFFF)
+
 SET [results + 7], 0x1234
 SUB [results + 7], 0xDEA ;assert(r7 == 0x44A)
 SET [results + 8], EX ;save ex, assert(ex == 0x0000)
@@ -17,6 +19,7 @@ SET [results + 8], EX ;save ex, assert(ex == 0x0000)
 SET [results + 9], 0x1234
 MUL [results + 9], 2; assert(r9==0x2468)
 SET [results + 10], EX ; ex==0x0
+
 SET [results + 11], 0xFFFF
 MUL [results + 11], 2; assert(r11==0xFFFE)
 SET [results + 12], EX ; ex==1
@@ -28,6 +31,7 @@ SET [results + 14], EX ; assert(ex==0xFFFF)
 SET [results + 15], 0x21 ; 33/2==15 rounding towards zero
 DIV [results + 15], 2 ; assert(r15==0x10)
 SET [results + 16], EX ; assert(ex==0x8000)
+
 SET [results + 17], 0x1234 ; 0x1234/0==0,ex==0 rounding towards zero
 DIV [results + 17], 0 ; assert(r17==0)
 SET [results + 18], EX ; assert(ex==0)

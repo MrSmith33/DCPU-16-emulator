@@ -28,7 +28,7 @@ public class Emulator
 private:
 
 	/// Performs basic instruction.
-	void basicInstruction(ushort instruction) @safe
+	void basicInstruction(ushort instruction)
 	{
 		ushort opcode = instruction & 0x1F;
 
@@ -42,7 +42,7 @@ private:
 
 		cycles += basicCycles[opcode];
 
-		final switch(opcode)
+		final switch (opcode)
 		{
 			case 0x00: assert(false); // Special opcode. Execution never goes here.
 			case 0x01: result = a; break; // SET
@@ -96,12 +96,31 @@ private:
 	}
 
 	/// Performs special instruction.
-	void specialInstruction(ushort instruction) @safe
+	void specialInstruction(ushort instruction)
 	{
-		ushort a = *getOperand!true(instruction >> 10);
+		ushort* a = getOperand!true(instruction >> 10);
 
 		ushort opcode = (instruction >> 5) & 0x1F;
 
+		switch (opcode)
+		{
+			case 0x01: push(dcpu.pc); dcpu.pc = *a; break; // JSR
+			case 0x08: assert(false); // INT
+			case 0x09: *a = dcpu.ia; break; // IAG
+			case 0x0a: dcpu.ia = *a; break; // IAS
+			case 0x0b: assert(false); // RFI
+			case 0x0c: assert(false); // IAQ
+			case 0x10: assert(false); // HWN
+			case 0x11: assert(false); // HWQ
+			case 0x12: assert(false); // HWI
+			default: assert(false);
+		}
+	}
+
+	/// Pushes value onto stack increasing SP.
+	void push(ushort value)
+	{
+		dcpu.mem[--dcpu.sp] = value;
 	}
 
 	/++
@@ -113,7 +132,7 @@ private:
   	+ conditional instruction has been skipped. This lets you easily chain
   	+ conditionals. Interrupts are not triggered while the DCPU-16 is skipping.
 	+/
-	void skip() @safe
+	void skip()
 	{
 		ushort opcode;
 		ushort instr;
@@ -132,14 +151,14 @@ private:
 	}
 
 	/// Resets dcpu state and interpreter state to their initial state.
-	void reset() @safe
+	void reset()
 	{
 		dcpu.reset();
 		cycles = 0;
 	}
 
 	/// Extracts operand from an instruction
-	ushort* getOperand(bool isA)(ushort instr) @safe
+	ushort* getOperand(bool isA)(ushort instr)
 	in
 	{
 		assert(instr <= 0x3f, "operand must be lower than 0x40");
@@ -194,12 +213,12 @@ private static ushort[0x20] literals =
 	 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E];
 
 /// Table of basic instructions cost.
-private static ubyte[] basicCycles = 
+private static immutable ubyte[] basicCycles = 
 	[0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1,
 	 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 3, 3, 0, 0, 2, 2];
 
 /// Table of special instructions cost.
-private static ubyte[] specialCycles = 
+private static immutable ubyte[] specialCycles = 
 	[0, 3, 0, 0, 0, 0, 0, 0, 4, 1, 1, 3, 2, 0, 0, 0,
 	 2, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
