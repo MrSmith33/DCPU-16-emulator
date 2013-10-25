@@ -23,6 +23,26 @@ public class Emulator
 		{
 			specialInstruction(instruction);
 		}
+
+		// Handle interrupts only when interrupt queuing is disabled.
+		// It may be enabled by interrupt handler or manually in time critical code.
+		if (!dcpu.queueInterrupts)
+		{
+			handleInterrupt();
+		}
+	}
+
+	/// Adds interrupt with message 'message' to dcpu.intQueue or starts burning DCPU if queue grows bigger than 256
+	void triggerInterrupt(ushort message)
+	{
+		if (dcpu.intQueue.isFull)
+		{
+			dcpu.isBurning = true;
+		}
+		else
+		{
+			dcpu.intQueue.add(message);
+		}
 	}
 
 private:
@@ -44,48 +64,48 @@ private:
 
 		final switch (opcode)
 		{
-			case 0x00: assert(false); // Special opcode. Execution never goes here.
-			case 0x01: result = a; break; // SET
-			case 0x02: result = b + a; dcpu.ex = result >> 16; break; // ADD
-			case 0x03: result = b - a; dcpu.ex = (a > b) ? 0xFFFF : 0; break; // SUB
-			case 0x04: result = b * a; dcpu.ex = result >> 16; break; // MUL
-			case 0x05: result = cast(short)a * cast(short)b; dcpu.ex = result >> 16; break; // MLI
-			case 0x06: if (a==0){dcpu.ex = 0; result = 0;}
+			case 0x00 : assert(false); // Special opcode. Execution never goes here.
+			case 0x01 : result = a; break; // SET
+			case 0x02 : result = b + a; dcpu.ex = result >> 16; break; // ADD
+			case 0x03 : result = b - a; dcpu.ex = (a > b) ? 0xFFFF : 0; break; // SUB
+			case 0x04 : result = b * a; dcpu.ex = result >> 16; break; // MUL
+			case 0x05 : result = cast(short)a * cast(short)b; dcpu.ex = result >> 16; break; // MLI
+			case 0x06 : if (a==0){dcpu.ex = 0; result = 0;}
 						else {result = b/a; dcpu.ex = ((b << 16)/a) & 0xffff;} break; // DIV TODO:test
-			case 0x07: if (a==0){dcpu.ex = 0; result = 0;}
+			case 0x07 : if (a==0){dcpu.ex = 0; result = 0;}
 						else {
 							result = cast(short)b/cast(short)a;
 							dcpu.ex = ((b << 16)/a) & 0xffff;
 						} break; // DVI TODO:test
-			case 0x08: result = a == 0 ? 0 : b % a; break; // MOD
-			case 0x09: result = a == 0 ? 0 : cast(short)b % cast(short)a; break; //MDI
-			case 0x0A: result = a & b; break; // AND
-			case 0x0B: result = a | b; break; // BOR
-			case 0x0C: result = a ^ b; break; // XOR
-			case 0x0D: result = b >> a; dcpu.ex = ((b<<16)>>a) & 0xffff; break; // SHR
-			case 0x0E: result = cast(short)b >>> a;
+			case 0x08 : result = a == 0 ? 0 : b % a; break; // MOD
+			case 0x09 : result = a == 0 ? 0 : cast(short)b % cast(short)a; break; //MDI
+			case 0x0A : result = a & b; break; // AND
+			case 0x0B : result = a | b; break; // BOR
+			case 0x0C : result = a ^ b; break; // XOR
+			case 0x0D : result = b >> a; dcpu.ex = ((b<<16)>>a) & 0xffff; break; // SHR
+			case 0x0E : result = cast(short)b >>> a;
 						dcpu.ex = ((b<<16)>>>a) & 0xffff; break; // ASR
-			case 0x0F: result = b << a; dcpu.ex = ((b<<a)>>16) & 0xffff; break; // SHL
-			case 0x10: if ((b & a)!=0) skip(); return; // IFB TODO:test
-			case 0x11: if ((b & a)==0) skip(); return; // IFC TODO:test
-			case 0x12: if (b == a) skip(); return; // IFE TODO:test
-			case 0x13: if (b != a) skip(); return; // IFE // IFN TODO:test
-			case 0x14: if (b > a) skip(); return; // IFG TODO:test
-			case 0x15: if (cast(short)b > cast(short)a) skip(); return; // IFA TODO:test
-			case 0x16: if (b < a) skip(); return; // IFL TODO:test
-			case 0x17: if (cast(short)b < cast(short)a) skip(); return; // IFU TODO:test
-			case 0x18: assert(false); // Invalid opcode
-			case 0x19: assert(false); // Invalid opcode
-			case 0x1A: result = b + a + dcpu.ex;
+			case 0x0F : result = b << a; dcpu.ex = ((b<<a)>>16) & 0xffff; break; // SHL
+			case 0x10 : if ((b & a)!=0) skip(); return; // IFB TODO:test
+			case 0x11 : if ((b & a)==0) skip(); return; // IFC TODO:test
+			case 0x12 : if (b == a) skip(); return; // IFE TODO:test
+			case 0x13 : if (b != a) skip(); return; // IFE // IFN TODO:test
+			case 0x14 : if (b > a) skip(); return; // IFG TODO:test
+			case 0x15 : if (cast(short)b > cast(short)a) skip(); return; // IFA TODO:test
+			case 0x16 : if (b < a) skip(); return; // IFL TODO:test
+			case 0x17 : if (cast(short)b < cast(short)a) skip(); return; // IFU TODO:test
+			case 0x18 : assert(false); // Invalid opcode
+			case 0x19 : assert(false); // Invalid opcode
+			case 0x1A : result = b + a + dcpu.ex;
 						dcpu.ex = result >> 16 ? 1 : 0; break; // ADX
-			case 0x1B: result = b - a + dcpu.ex; dcpu.ex = 0;
+			case 0x1B : result = b - a + dcpu.ex; dcpu.ex = 0;
 						if (ushort over = result >> 16)
 							dcpu.ex = over == 0xFFFF ? 0xFFFF : 0x0001;
 						break; // SBX
-			case 0x1C: assert(false); // Invalid opcode
-			case 0x1D: assert(false); // Invalid opcode
-			case 0x1E: result = a; ++dcpu.reg[6]; ++dcpu.reg[7]; break; // STI
-			case 0x1F: result = a; --dcpu.reg[6]; --dcpu.reg[7]; break; // STD
+			case 0x1C : assert(false); // Invalid opcode
+			case 0x1D : assert(false); // Invalid opcode
+			case 0x1E : result = a; ++dcpu.reg[6]; ++dcpu.reg[7]; break; // STI
+			case 0x1F : result = a; --dcpu.reg[6]; --dcpu.reg[7]; break; // STD
 		}
 
 		if (destinationType < 0x1F)
@@ -104,16 +124,19 @@ private:
 
 		switch (opcode)
 		{
-			case 0x01: push(dcpu.pc); dcpu.pc = *a; break; // JSR
-			case 0x08: assert(false); // INT
-			case 0x09: *a = dcpu.ia; break; // IAG
-			case 0x0a: dcpu.ia = *a; break; // IAS
-			case 0x0b: assert(false); // RFI
-			case 0x0c: assert(false); // IAQ
-			case 0x10: assert(false); // HWN
-			case 0x11: assert(false); // HWQ
-			case 0x12: assert(false); // HWI
-			default: assert(false);
+			case 0x01 : push(dcpu.pc); dcpu.pc = *a; break; // JSR
+			case 0x08 : triggerInterrupt(*a); break; // INT
+			case 0x09 : *a = dcpu.ia; break; // IAG
+			case 0x0a : dcpu.ia = *a; break; // IAS
+			case 0x0b : dcpu.queueInterrupts = false;
+						dcpu.reg[0] = pop();
+						dcpu.pc = pop();
+						break; // RFI
+			case 0x0c : dcpu.queueInterrupts = *a > 0; break; // IAQ
+			case 0x10 : *a = dcpu.numDevices; break; // HWN
+			case 0x11 : queryHardwareInfo(*a); break; // HWQ
+			case 0x12 : sendHardwareInterrupt(*a); break; // HWI
+			default : assert(false);
 		}
 	}
 
@@ -121,6 +144,51 @@ private:
 	void push(ushort value)
 	{
 		dcpu.mem[--dcpu.sp] = value;
+	}
+
+	/// Pops value from stack decreasing SP.
+	ushort pop()
+	{
+		return dcpu.mem[++dcpu.sp];
+	}
+
+	/// Sets A, B, C, X, Y registers to information about hardware deviceIndex
+	void queryHardwareInfo(ushort deviceIndex)
+	{
+		if (auto device = deviceIndex in dcpu.devices)
+		{
+			cast(uint[1])dcpu.reg[0..2] = device.hardwareId;
+			dcpu.reg[2] = device.hardwareVersion;
+			cast(uint[1])dcpu.reg[3..5] = device.manufacturer;
+		}
+	}
+
+	/// Sends an interrupt to hardware deviceIndex
+	void sendHardwareInterrupt(ushort deviceIndex)
+	{
+		if (auto device = deviceIndex in dcpu.devices)
+		{
+			cycles += device.handleInterrupt(this);
+		}
+	}
+
+	/// Handles interrupt from interrupt queue if IA != 0 && intQueue.length > 0
+	void handleInterrupt()
+	{
+		if (dcpu.intQueue.size == 0) return;
+
+		ushort message = dcpu.intQueue.take();
+
+		if (dcpu.ia != 0)
+		{
+			dcpu.queueInterrupts = true;
+
+			push(dcpu.pc);
+			push(dcpu.reg[0]);
+
+			dcpu.pc = dcpu.ia;
+			dcpu.reg[0] = message;
+		}
 	}
 
 	/++

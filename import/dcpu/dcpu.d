@@ -3,6 +3,7 @@ module dcpu.dcpu;
 import std.algorithm : fill;
 
 import dcpu.devices.idevice;
+import dcpu.interruptqueue;
 
 @safe nothrow:
 
@@ -16,11 +17,21 @@ struct Dcpu
 	ushort		ia;
 
 	ushort[0x10000] mem;
+
+	bool queueInterrupts = false;
+	InterruptQueue intQueue;
 	
-	private nextHardwareId = 0;
+	private ushort nextHardwareId = 0;
 	IDevice[ushort] devices;
 
-	ushort attachDevice(IDevice device)
+	bool isBurning = false;
+
+	ushort numDevices() @property @trusted
+	{
+		return cast(ushort)devices.length;
+	}
+
+	ushort attachDevice(IDevice device) // TODO: checks
 	{
 		devices[nextHardwareId] = device;
 		return nextHardwareId++;
@@ -35,6 +46,14 @@ void reset(Dcpu data)
 	data.sp = 0;
 	data.ex = 0;
 	data.ia = 0;
+
+	data.queueInterrupts = false;
+	data.intQueue.clear();
+
+	data.devices = null;
+	data.numDevices = 0;
+
+	data.isBurning = false;
 
 	fill!(ushort[], ushort)(data.mem, 0u);
 }
