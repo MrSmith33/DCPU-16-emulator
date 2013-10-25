@@ -51,7 +51,7 @@ void reset(Dcpu data)
 	data.intQueue.clear();
 
 	data.devices = null;
-	data.numDevices = 0;
+	data.nextHardwareId = 0;
 
 	data.isBurning = false;
 
