@@ -62,50 +62,47 @@ private:
 
 		cycles += basicCycles[opcode];
 
-		final switch (opcode)
+		with(dcpu) switch (opcode)
 		{
 			case 0x00 : assert(false); // Special opcode. Execution never goes here.
-			case 0x01 : result = a; break; // SET
-			case 0x02 : result = b + a; dcpu.ex = result >> 16; break; // ADD
-			case 0x03 : result = b - a; dcpu.ex = (a > b) ? 0xFFFF : 0; break; // SUB
-			case 0x04 : result = b * a; dcpu.ex = result >> 16; break; // MUL
-			case 0x05 : result = cast(short)a * cast(short)b; dcpu.ex = result >> 16; break; // MLI
-			case 0x06 : if (a==0){dcpu.ex = 0; result = 0;}
-						else {result = b/a; dcpu.ex = ((b << 16)/a) & 0xffff;} break; // DIV TODO:test
-			case 0x07 : if (a==0){dcpu.ex = 0; result = 0;}
+			case SET: result = a; break;
+			case ADD: result = b + a; ex = result >> 16; break;
+			case SUB: result = b - a; ex = (a > b) ? 0xFFFF : 0; break;
+			case MUL: result = b * a; ex = result >> 16; break;
+			case MLI: result = cast(short)a * cast(short)b; ex = result >> 16; break;
+			case DIV: if (a==0){ex = 0; result = 0;}
+						else {result = b/a; ex = ((b << 16)/a) & 0xffff;} break; // TODO:test
+			case DVI: if (a==0){ex = 0; result = 0;}
 						else {
 							result = cast(short)b/cast(short)a;
-							dcpu.ex = ((b << 16)/a) & 0xffff;
-						} break; // DVI TODO:test
-			case 0x08 : result = a == 0 ? 0 : b % a; break; // MOD
-			case 0x09 : result = a == 0 ? 0 : cast(short)b % cast(short)a; break; //MDI
-			case 0x0A : result = a & b; break; // AND
-			case 0x0B : result = a | b; break; // BOR
-			case 0x0C : result = a ^ b; break; // XOR
-			case 0x0D : result = b >> a; dcpu.ex = ((b<<16)>>a) & 0xffff; break; // SHR
-			case 0x0E : result = cast(short)b >>> a;
-						dcpu.ex = ((b<<16)>>>a) & 0xffff; break; // ASR
-			case 0x0F : result = b << a; dcpu.ex = ((b<<a)>>16) & 0xffff; break; // SHL
-			case 0x10 : if ((b & a)!=0) skip(); return; // IFB TODO:test
-			case 0x11 : if ((b & a)==0) skip(); return; // IFC TODO:test
-			case 0x12 : if (b == a) skip(); return; // IFE TODO:test
-			case 0x13 : if (b != a) skip(); return; // IFE // IFN TODO:test
-			case 0x14 : if (b > a) skip(); return; // IFG TODO:test
-			case 0x15 : if (cast(short)b > cast(short)a) skip(); return; // IFA TODO:test
-			case 0x16 : if (b < a) skip(); return; // IFL TODO:test
-			case 0x17 : if (cast(short)b < cast(short)a) skip(); return; // IFU TODO:test
-			case 0x18 : assert(false); // Invalid opcode
-			case 0x19 : assert(false); // Invalid opcode
-			case 0x1A : result = b + a + dcpu.ex;
-						dcpu.ex = result >> 16 ? 1 : 0; break; // ADX
-			case 0x1B : result = b - a + dcpu.ex; dcpu.ex = 0;
+							ex = ((b << 16)/a) & 0xffff;
+						} break; // TODO:test
+			case MOD: result = a == 0 ? 0 : b % a; break;
+			case MDI: result = a == 0 ? 0 : cast(short)b % cast(short)a; break;
+			case AND: result = a & b; break;
+			case BOR: result = a | b; break;
+			case XOR: result = a ^ b; break;
+			case SHR: result = b >> a; ex = ((b<<16)>>a) & 0xffff; break;
+			case ASR: result = cast(short)b >>> a;
+						ex = ((b<<16)>>>a) & 0xffff; break;
+			case SHL: result = b << a; ex = ((b<<a)>>16) & 0xffff; break;
+			case IFB: if ((b & a)!=0) skip(); return; // TODO:test
+			case IFC: if ((b & a)==0) skip(); return; // TODO:test
+			case IFE: if (b == a) skip(); return; // TODO:test
+			case IFN: if (b != a) skip(); return; // TODO:test
+			case IFG: if (b > a) skip(); return; // TODO:test
+			case IFA: if (cast(short)b > cast(short)a) skip(); return; // TODO:test
+			case IFL: if (b < a) skip(); return; // TODO:test
+			case IFU: if (cast(short)b < cast(short)a) skip(); return; // TODO:test
+			case ADX: result = b + a + ex;
+						ex = result >> 16 ? 1 : 0; break;
+			case SBX: result = b - a + ex; ex = 0;
 						if (ushort over = result >> 16)
-							dcpu.ex = over == 0xFFFF ? 0xFFFF : 0x0001;
-						break; // SBX
-			case 0x1C : assert(false); // Invalid opcode
-			case 0x1D : assert(false); // Invalid opcode
-			case 0x1E : result = a; ++dcpu.reg[6]; ++dcpu.reg[7]; break; // STI
-			case 0x1F : result = a; --dcpu.reg[6]; --dcpu.reg[7]; break; // STD
+							ex = over == 0xFFFF ? 0xFFFF : 0x0001;
+						break;
+			case STI: result = a; ++reg[6]; ++reg[7]; break;
+			case STD: result = a; --reg[6]; --reg[7]; break;
+			default: assert(false); //Invalid opcode
 		}
 
 		if (destinationType < 0x1F)
@@ -122,20 +119,20 @@ private:
 
 		ushort opcode = (instruction >> 5) & 0x1F;
 
-		switch (opcode)
+		with(dcpu) switch (opcode)
 		{
-			case 0x01 : push(dcpu.pc); dcpu.pc = *a; break; // JSR
-			case 0x08 : triggerInterrupt(*a); break; // INT
-			case 0x09 : *a = dcpu.ia; break; // IAG
-			case 0x0a : dcpu.ia = *a; break; // IAS
-			case 0x0b : dcpu.queueInterrupts = false;
-						dcpu.reg[0] = pop();
-						dcpu.pc = pop();
-						break; // RFI
-			case 0x0c : dcpu.queueInterrupts = *a > 0; break; // IAQ
-			case 0x10 : *a = dcpu.numDevices; break; // HWN
-			case 0x11 : queryHardwareInfo(*a); break; // HWQ
-			case 0x12 : sendHardwareInterrupt(*a); break; // HWI
+			case JSR: push(pc); pc = *a; break;
+			case INT: triggerInterrupt(*a); break;
+			case IAG: *a = ia; break;
+			case IAS: ia = *a; break;
+			case RFI: queueInterrupts = false;
+						reg[0] = pop();
+						pc = pop();
+						break;
+			case IAQ: queueInterrupts = *a > 0; break;
+			case HWN: *a = numDevices; break;
+			case HWQ: queryHardwareInfo(*a); break;
+			case HWI: sendHardwareInterrupt(*a); break;
 			default : assert(false);
 		}
 	}
@@ -289,6 +286,11 @@ private static immutable ubyte[] basicCycles =
 private static immutable ubyte[] specialCycles = 
 	[0, 3, 0, 0, 0, 0, 0, 0, 4, 1, 1, 3, 2, 0, 0, 0,
 	 2, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+// Enums for opcodes. Just a bit of self documented code.
+enum {SET = 0x01, ADD, SUB, MUL, MLI, DIV, DVI, MOD, MDI, AND, BOR, XOR, SHR, ASR,
+	SHL, IFB, IFC, IFE, IFN, IFG, IFA, IFL, IFU, ADX = 0x1a, SBX, STI = 0x1e, STD}
+enum {JSR = 0x01, INT = 0x08, IAG, IAS, RFI, IAQ, HWN = 0x10, HWQ, HWI}
 
 unittest
 {
