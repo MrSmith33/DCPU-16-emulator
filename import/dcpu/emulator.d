@@ -232,38 +232,37 @@ private:
 	}
 	body
 	{
-		alias dcpu d;
-		switch(instr)
+		with(dcpu) switch(instr)
 		{
 			case 0x00: .. case 0x07:
-				return &d.reg[instr];
+				return &reg[instr];
 			case 0x08: .. case 0x0f:
-				return &d.mem[d.reg[instr & 7]];
+				return &mem[reg[instr & 7]];
 			case 0x10: .. case 0x17:
 				++cycles;
-				return &d.mem[(d.reg[instr & 7] + d.mem[d.pc++]) & 0xffff];
+				return &mem[(reg[instr & 7] + mem[pc++]) & 0xffff];
 			case 0x18:
 				static if (isA)
-					return &d.mem[d.sp++];
+					return &mem[sp++];
 				else
-					return &d.mem[--d.sp];
+					return &mem[--sp];
 			case 0x19:
-				return &d.mem[d.sp];
+				return &mem[sp];
 			case 0x1a:
 				++cycles;
-				return &d.mem[d.sp + d.pc++];
+				return &mem[cast(ushort)(sp + pc++)];
 			case 0x1b:
-				return &d.sp;
+				return &sp;
 			case 0x1c:
-				return &d.pc;
+				return &pc;
 			case 0x1d:
-				return &d.ex;
+				return &ex;
 			case 0x1e:
 				++cycles;
-				return &d.mem[d.mem[d.pc++]];
+				return &mem[mem[pc++]];
 			case 0x1f:
 				++cycles;
-				return &d.mem[d.pc++];
+				return &mem[pc++];
 			default:
 				return &literals[instr & 0x1F];
 		}
@@ -288,11 +287,6 @@ private static immutable ubyte[] specialCycles =
 	 2, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 // Enums for opcodes. Just a bit of self documented code.
-enum {SET = 0x01, ADD, SUB, MUL, MLI, DIV, DVI, MOD, MDI, AND, BOR, XOR, SHR, ASR,
-	SHL, IFB, IFC, IFE, IFN, IFG, IFA, IFL, IFU, ADX = 0x1a, SBX, STI = 0x1e, STD}
-enum {JSR = 0x01, INT = 0x08, IAG, IAS, RFI, IAQ, HWN = 0x10, HWQ, HWI}
-
-unittest
-{
-
-}
+private enum {SET = 0x01, ADD, SUB, MUL, MLI, DIV, DVI, MOD, MDI, AND, BOR, XOR, SHR, ASR,
+			SHL, IFB, IFC, IFE, IFN, IFG, IFA, IFL, IFU, ADX = 0x1a, SBX, STI = 0x1e, STD}
+private enum {JSR = 0x01, INT = 0x08, IAG, IAS, RFI, IAQ, HWN = 0x10, HWQ, HWI}
