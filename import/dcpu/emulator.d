@@ -32,6 +32,26 @@ public class Emulator
 		}
 	}
 
+	// Tries to do cyclesToStep cycles of dcpu.
+	// Returns actual cycles done.
+	size_t stepCycles(size_t cyclesToStep)
+	{
+		size_t initialCycles = cycles;
+		while(cycles - initialCycles < cyclesToStep)
+		{
+			step();
+		}
+
+		return cycles - initialCycles;
+	}
+
+	// Steps instructionsToStep instructions.
+	void stepInstructions(size_t instructionsToStep)
+	{
+		foreach(_; 0..instructionsToStep)
+			step();
+	}
+
 	/// Adds interrupt with message 'message' to dcpu.intQueue or starts burning DCPU if queue grows bigger than 256
 	void triggerInterrupt(ushort message)
 	{

@@ -28,14 +28,17 @@ SET [results + 13], 0x1234
 MLI [results + 13], -2 ;assert(r13 == 0xdb98)
 SET [results + 14], EX ; assert(ex==0xFFFF)
 ;DIV
-SET [results + 15], 0x21 ; 33/2==15 rounding towards zero
+SET [results + 15], 0x21 ; 33/2==16 rounding towards zero
 DIV [results + 15], 2 ; assert(r15==0x10)
 SET [results + 16], EX ; assert(ex==0x8000)
 
-SET [results + 17], 0x1234 ; 0x1234/0==0,ex==0 rounding towards zero
+SET [results + 17], 0x1234 ; 0x1234/0==0,ex==0 division by zero
 DIV [results + 17], 0 ; assert(r17==0)
 SET [results + 18], EX ; assert(ex==0)
 ;DVI
+SET [results + 19], 0x21 ; 33/-2 == -16
+DVI [results + 19], 0xFFFE ; assert(r19==0xFFF0)
+SET [results + 20], EX ; assert(ex==0x8000)
 ;MOD
 ;MDI
 ;AND
