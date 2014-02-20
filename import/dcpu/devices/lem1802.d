@@ -30,6 +30,9 @@ protected:
 	ushort fontAddress;
 	ushort videoAddress;
 	ushort paletteAddress;
+	ushort borderColor;
+
+	bool blinkPhase;
 
 	enum numRows = 12;
 	enum numCols = 32;
@@ -133,7 +136,59 @@ protected:
 
 	void drawChar(ushort charData, size_t x, size_t y)
 	{
+		uint charIndex = charData & 0x7F;
+		bool blinkBit  = (charData & 0x80) > 0;
+		uint foreIndex = (charData & 0xF000) >> 12;
+		uint backIndex = (charData & 0xF00) >> 8;
+
+		ushort foreColor;
+		ushort backColor;
+
+		if (paletteAddress == 0)
+		{
+			foreColor = defaultPalette[foreIndex];
+			backColor = defaultPalette[backIndex];
+		}
+		else
+		{
+			foreColor = _dcpu.mem[(paletteAddress + foreIndex) & 0xFFFF];
+			backColor = _dcpu.mem[(paletteAddress + backIndex) & 0xFFFF];
+		}
+
+		uint foreRGB = ((foreColor & 0xF) << 16) * 17 +
+						((foreColor & 0xF0) << 4) * 17 +
+						((foreColor & 0xF00) >> 8) * 17 +
+						0xFF000000;
+		uint backRGB = ((backColor & 0xF) << 16) * 17 +
+						((backColor & 0xF0) << 4) * 17 +
+						((backColor & 0xF00) >> 8) * 17 +
+						0xFF000000;
+
+		if (blinkBit && blinkPhase)
+		{
+			fillCell(x, y, backRGB);
+		}
+		else
+		{
+			drawCell(x, y, foreRGB, backRGB, charIndex);
+		}
+
+		drawBorder();
+	}
+
+	void fillCell(size_t x, size_t y, uint color)
+	{
 		
+	}
+
+	void drawCell(size_t x, size_t y, uint foreColor, uint backColor, uint charIndex)
+	{
+
+	}
+
+	void drawBorder()
+	{
+
 	}
 
 	void mapScreen(ushort b)
@@ -153,7 +208,7 @@ protected:
 
 	void setBorderColor(ushort b)
 	{
-
+		borderColor = b & 0xF;
 	}
 
 	void dumpFont(ushort b)
