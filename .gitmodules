@@ -1,0 +1,3 @@
+[submodule "deps/anchovy"]
+	path = deps/anchovy
+	url = https://github.com/MrSmith33/anchovy
