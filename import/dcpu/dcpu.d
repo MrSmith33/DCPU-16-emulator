@@ -46,7 +46,7 @@ struct Dcpu
 }
 
 /// Resets dcpu to its initial state.
-void reset(Dcpu data)
+void reset(ref Dcpu data)
 {
 	data.reg = [0, 0, 0, 0, 0, 0, 0, 0];
 	data.pc = 0;

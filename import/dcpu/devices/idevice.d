@@ -14,9 +14,14 @@ import dcpu.emulator;
 
 interface IDevice
 {
+	/// Saves dcpu reference internally for future use.
+	void attachDcpu(Dcpu* dcpu);
+
 	/// Handles hardware interrupt and returns a number of cycles.
 	uint handleInterrupt(ref Emulator emulator);
 
+	/// Called every application frame.
+	/// Can be used to update screens.
 	void update();
 
 	/// Returns: 32 bit word identifying the hardware id.

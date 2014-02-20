@@ -239,7 +239,7 @@ private:
 
 			++cycles;
 		}
-		while (opcode >= 0x10 && opcode <= 0x17);
+		while (opcode >= IFB && opcode <= IFU);
 	}
 
 	/// Resets dcpu state and interpreter state to their initial state.
@@ -261,36 +261,36 @@ private:
 	{
 		with(dcpu) switch(instr)
 		{
-			case 0x00: .. case 0x07:
+			case 0x00: .. case 0x07: // register
 				return &reg[instr];
-			case 0x08: .. case 0x0f:
+			case 0x08: .. case 0x0f: // [register]
 				return &mem[reg[instr & 7]];
-			case 0x10: .. case 0x17:
+			case 0x10: .. case 0x17: // [register + next word]
 				++cycles;
 				return &mem[(reg[instr & 7] + mem[pc++]) & 0xffff];
-			case 0x18:
+			case 0x18: // PUSH / POP
 				static if (isA)
 					return &mem[sp++];
 				else
 					return &mem[--sp];
-			case 0x19:
+			case 0x19: // [SP] / PEEK
 				return &mem[sp];
-			case 0x1a:
+			case 0x1a: // [SP + next word]
 				++cycles;
 				return &mem[cast(ushort)(sp + pc++)];
-			case 0x1b:
+			case 0x1b: // SP
 				return &sp;
-			case 0x1c:
+			case 0x1c: // PC
 				return &pc;
-			case 0x1d:
+			case 0x1d: // EX
 				return &ex;
-			case 0x1e:
+			case 0x1e: // [next word]
 				++cycles;
 				return &mem[mem[pc++]];
-			case 0x1f:
+			case 0x1f: // next word
 				++cycles;
 				return &mem[pc++];
-			default:
+			default: // 0xffff-0x1e (-1..30) (literal) (only for a)
 				return &literals[instr & 0x1F];
 		}
 	}
