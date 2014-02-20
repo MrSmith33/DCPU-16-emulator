@@ -36,7 +36,7 @@ public:
 
 	override void attachDcpu(Dcpu* dcpu)
 	{
-		
+		_dcpu = dcpu;
 	}
 
 	/// Handles hardware interrupt and returns a number of cycles.
@@ -48,22 +48,22 @@ public:
 		switch(aRegister)
 		{
 			case 0:
-				mapScreen(bRegister, emulator.dcpu);
+				mapScreen(bRegister);
 				return 0;
 			case 1:
-				mapFont(bRegister, emulator.dcpu);
+				mapFont(bRegister);
 				return 0;
 			case 2:
-				mapPalette(bRegister, emulator.dcpu);
+				mapPalette(bRegister);
 				return 0;
 			case 3:
-				setBorderColor(bRegister, emulator.dcpu);
+				setBorderColor(bRegister);
 				return 0;
 			case 4:
-				dumpFont(bRegister, emulator.dcpu);
+				dumpFont(bRegister);
 				return 256;
 			case 5:
-				dumpPalette(bRegister, emulator.dcpu);
+				dumpPalette(bRegister);
 				return 16;
 			default:
 				break;
@@ -76,7 +76,7 @@ public:
 	/// Can be used to update screens.
 	override void update()
 	{
-
+		drawScreen();
 	}
 
 	/// Returns: 32 bit word identifying the hardware id.
@@ -97,39 +97,39 @@ public:
 		return 0x1c6c8b36;
 	}
 
-
+protected:
 
 	void drawScreen()
 	{
 
 	}
 
-	void mapScreen(ushort b, in Dcpu dcpu)
+	void mapScreen(ushort b)
 	{
 
 	}
 
-	void mapFont(ushort b, in Dcpu dcpu)
+	void mapFont(ushort b)
 	{
 
 	}
 
-	void mapPalette(ushort b, in Dcpu dcpu)
+	void mapPalette(ushort b)
 	{
 		
 	}
 
-	void setBorderColor(ushort b, in Dcpu dcpu)
+	void setBorderColor(ushort b)
 	{
 
 	}
 
-	void dumpFont(ushort b, ref Dcpu dcpu)
+	void dumpFont(ushort b)
 	{
 
 	}
 
-	void dumpPalette(ushort b, ref Dcpu dcpu)
+	void dumpPalette(ushort b)
 	{
 		
 	}
