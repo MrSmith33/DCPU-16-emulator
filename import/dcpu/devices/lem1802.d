@@ -33,6 +33,7 @@ protected:
 	ushort videoAddress;
 	ushort paletteAddress;
 	ushort borderColor;
+	uint borderRGB;
 
 	bool blinkPhase;
 
@@ -122,7 +123,7 @@ protected:
 
 	void drawScreen()
 	{
-		if (_dcpu is null) return;
+		if (_dcpu is null || videoAddress == 0) return;
 
 		foreach(line; 0..numRows)
 		{
@@ -140,31 +141,11 @@ protected:
 	{
 		uint charIndex = charData & 0x7F;
 		bool blinkBit  = (charData & 0x80) > 0;
-		uint foreIndex = (charData & 0xF000) >> 12;
-		uint backIndex = (charData & 0xF00) >> 8;
+		ushort foreIndex = (charData & 0xF000) >> 12;
+		ushort backIndex = (charData & 0xF00) >> 8;
 
-		ushort foreColor;
-		ushort backColor;
-
-		if (paletteAddress == 0)
-		{
-			foreColor = defaultPalette[foreIndex];
-			backColor = defaultPalette[backIndex];
-		}
-		else
-		{
-			foreColor = _dcpu.mem[(paletteAddress + foreIndex) & 0xFFFF];
-			backColor = _dcpu.mem[(paletteAddress + backIndex) & 0xFFFF];
-		}
-
-		uint foreRGB = ((foreColor & 0xF) << 16) * 17 +
-						((foreColor & 0xF0) << 4) * 17 +
-						((foreColor & 0xF00) >> 8) * 17 +
-						0xFF000000;
-		uint backRGB = ((backColor & 0xF) << 16) * 17 +
-						((backColor & 0xF0) << 4) * 17 +
-						((backColor & 0xF00) >> 8) * 17 +
-						0xFF000000;
+		uint foreRGB = paletteToRGB8(foreIndex);
+		uint backRGB = paletteToRGB8(backIndex);
 
 		if (blinkBit && blinkPhase)
 		{
@@ -183,6 +164,24 @@ protected:
 		drawBorder();
 	}
 
+	uint paletteToRGB8(ushort colorIndex)
+	{
+		ushort rgb12color;
+		if (paletteAddress == 0)
+		{
+			rgb12color = defaultPalette[colorIndex & 0xF];
+		}
+		else
+		{
+			rgb12color = _dcpu.mem[(paletteAddress + (colorIndex & 0xF)) & 0xFFFF];
+		}
+
+		return ((rgb12color & 0xF) << 16) * 17 +
+			((rgb12color & 0xF0) << 4) * 17 +
+			((rgb12color & 0xF00) >> 8) * 17 +
+			0xFF000000;
+	}
+
 	void fillCell(size_t x, size_t y, uint color)
 	{
 		uint cellX = borderSize + x * charWidth;
@@ -195,8 +194,8 @@ protected:
 
 		foreach(i; 0..8)
 		{
-			dataPos = cellX + _bitmap.size.x * cellY + i;
-			cast(uint[4])data[dataPos .. dataPos + 16] = [color, color, color, color];
+			dataPos = cellX + screenWidth * cellY + i;
+			(cast(uint[])data)[dataPos .. dataPos + 16][] = color;
 		}
 	}
 
@@ -205,63 +204,48 @@ protected:
 		uint cellX = borderSize + x * charWidth;
 		uint cellY = borderSize + y * charHeight;
 
-		ubyte[] data = _bitmap.data;
+		uint[] colorData = cast(uint[])_bitmap.data;
 
-		size_t dataPos; 
+		size_t dataPos;
 		uint[] cellLine;
 
+		//writefln("x %s y %s cellX %s cellY %s", x, y, cellX, cellY);
 		foreach(i; 0..8)
 		{
-			dataPos = cellX + _bitmap.size.x * (cellY + i);
-			cellLine = cast(uint[4])data[dataPos .. dataPos + 16];
-			//writefln("dataPos %s cellLine %s", dataPos);
+			dataPos = cellX + screenWidth * (cellY + i);
+			cellLine = colorData[dataPos .. dataPos + 16];
+			//writef("dataPos %s %s cellLine %s ", dataPos, dataPos+4, cellLine);
 
-			if (charData & (1 << (i + 8)))
-			{
-				cast(uint[1])cellLine[0..4] = foreColor;
-			}
-			else
-			{
-				cast(uint[1])cellLine[0..4] = backColor;
-			}
-
-			if (charData & (1 << i))
-			{
-				cast(uint[1])cellLine[4..8] = foreColor;
-			}
-			else
-			{
-				cast(uint[1])cellLine[4..8] = backColor;
-			}
-
-			if (charData & (1 << (i + 24)))
-			{
-				cast(uint[1])cellLine[8..12] = foreColor;
-			}
-			else
-			{
-				cast(uint[1])cellLine[8..12] = backColor;
-			}
-
-			if (charData & (1 << (i + 16)))
-			{
-				cast(uint[1])cellLine[12..16] = foreColor;
-			}
-			else
-			{
-				cast(uint[1])cellLine[12..16] = backColor;
-			}
+			cellLine[0] = charData & (1 << (i +  0)) ? foreColor : backColor;
+			cellLine[1] = charData & (1 << (i + 24)) ? foreColor : backColor;
+			cellLine[2] = charData & (1 << (i + 16)) ? foreColor : backColor;
+			cellLine[3] = charData & (1 << (i +  8)) ? foreColor : backColor;
+			//writeln(cast(uint[4])data[dataPos .. dataPos + 16]);
 		}
 	}
 
 	void drawBorder()
 	{
+		uint backRGB = paletteToRGB8(borderColor);
+		uint[] colorData = cast(uint[])_bitmap.data;
 
+		colorData[0..borderSize * screenWidth][] = backRGB;
+
+		size_t topOffset;
+		foreach(line; borderSize..screenHeight - borderSize)
+		{
+			topOffset = line * screenWidth;
+			colorData[topOffset..topOffset + borderSize][] = backRGB;
+			colorData[topOffset + screenWidth - borderSize .. topOffset + screenWidth][] = backRGB;
+		}
+
+		colorData[$-borderSize * screenWidth..$][] = backRGB;
 	}
 
 	void mapScreen(ushort b)
 	{
-
+		writeln("mapped videoAddress to ", b);
+		videoAddress = b;
 	}
 
 	void mapFont(ushort b)
