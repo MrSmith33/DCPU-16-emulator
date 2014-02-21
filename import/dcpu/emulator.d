@@ -9,8 +9,9 @@ module dcpu.emulator;
 
 import dcpu.dcpu;
 import std.conv : to;
+import std.stdio;
 
-@safe nothrow:
+//@safe nothrow:
 
 /// Does actual interpreting of DCPU-16
 public class Emulator
@@ -130,7 +131,7 @@ private:
 						break;
 			case STI: result = a; ++reg[6]; ++reg[7]; break;
 			case STD: result = a; --reg[6]; --reg[7]; break;
-			default: assert(false); //Invalid opcode
+			default: writeln("Unknown instruction " ~ to!string(opcode)); //Invalid opcode
 		}
 
 		if (destinationType < 0x1F)
@@ -161,7 +162,7 @@ private:
 			case HWN: *a = numDevices; break;
 			case HWQ: queryHardwareInfo(*a); break;
 			case HWI: sendHardwareInterrupt(*a); break;
-			default : assert(false, "Unknown instruction " ~ to!string(opcode));
+			default : writeln("Unknown instruction " ~ to!string(opcode));
 		}
 	}
 

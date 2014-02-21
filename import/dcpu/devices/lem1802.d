@@ -265,12 +265,24 @@ protected:
 
 	void dumpFont(ushort b)
 	{
+		ushort pointer = b;
 
+		foreach(word; cast(ushort[])defaultFont)
+		{
+			_dcpu.mem[pointer] = word;
+			++pointer;
+		}
 	}
 
 	void dumpPalette(ushort b)
 	{
-		
+		ushort pointer = b;
+
+		foreach(word; defaultPalette)
+		{
+			_dcpu.mem[pointer] = word;
+			++pointer;
+		}
 	}
 }
 
