@@ -7,13 +7,15 @@ Authors: Andrey Penechko.
 
 module dcpu.devices.lem1802;
 
+import std.stdio;
+
 import anchovy.graphics.bitmap;
 
 import dcpu.devices.idevice;
 import dcpu.emulator;
 import dcpu.dcpu;
 
-@safe nothrow:
+@trusted nothrow:
 
 /++
  + NE_LEM1802 v1.0
@@ -174,7 +176,8 @@ protected:
 		}
 		else
 		{
-			drawCell(x, y, foreRGB, backRGB, _dcpu.mem[(fontAddress + charIndex) & 0xFFFF]);
+			drawCell(x, y, foreRGB, backRGB, _dcpu.mem[(fontAddress + charIndex) & 0xFFFF] +
+					_dcpu.mem[(fontAddress + charIndex + 1) & 0xFFFF] << 16);
 		}
 
 		drawBorder();
@@ -209,10 +212,11 @@ protected:
 
 		foreach(i; 0..8)
 		{
-			dataPos = cellX + _bitmap.size.x * cellY + i;
+			dataPos = cellX + _bitmap.size.x * (cellY + i);
 			cellLine = cast(uint[4])data[dataPos .. dataPos + 16];
+			//writefln("dataPos %s cellLine %s", dataPos);
 
-			if (charData & (1 << i + 8))
+			if (charData & (1 << (i + 8)))
 			{
 				cast(uint[1])cellLine[0..4] = foreColor;
 			}
@@ -230,7 +234,7 @@ protected:
 				cast(uint[1])cellLine[4..8] = backColor;
 			}
 
-			if (charData & (1 << i + 24))
+			if (charData & (1 << (i + 24)))
 			{
 				cast(uint[1])cellLine[8..12] = foreColor;
 			}
@@ -239,7 +243,7 @@ protected:
 				cast(uint[1])cellLine[8..12] = backColor;
 			}
 
-			if (charData & (1 << i + 16))
+			if (charData & (1 << (i + 16)))
 			{
 				cast(uint[1])cellLine[12..16] = foreColor;
 			}

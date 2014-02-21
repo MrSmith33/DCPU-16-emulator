@@ -1,0 +1,56 @@
+template:mainLayer {
+	tree layout="vertical" isVisible=false vexpand=true hexpand=true {
+		image id="monitor"
+		widget layout="horizontal" isVisible=false {
+			text-button id="step" text="Step"
+			text-button id="dump" text="Dump"
+			text-button id="run" text="Run"
+			text-button id="reset" text="Reset"
+			text-button id="disasm" text="Disassemble"
+		}
+		widget layout="vertical" style="button" {
+			label id="reg1"
+			label id="reg2"
+			label id="reg3"
+		}	
+	}
+}
+
+template:text-button extends="button" {
+	properties {
+		text subwidget="label" property="text"
+	}
+
+	tree layout="vertical" {
+		widget vexpand=true isVisible=false
+		label name="label"
+		widget vexpand=true isVisible=false
+	}
+}
+
+
+/*
+frame name="lem1802-frame" caption="LEM1802 monitor" {
+	image name="monitor"
+}
+
+# 128 x 96 x 3 == 36864 bytes texture
+# 32 x 12 == 384 words == 768 bytes
+# 4 x 8 x 128 / 8 == 512
+# 16 x 3 == 48
+
+frame name="registers-frame" caption="Registers" data-bind:foreach="registers" layout="docking" {
+	widget dock="top" layout="docking" {
+		label data-bind:text="reg-name"
+		edit data-bind:value="reg-value"
+	}
+}
+
+frame name="memory-dump-frame" caption="Memory dump" layout="docking" {
+	column-list dock="fill" layout="docking" data-bind:foreach="lines" {
+		widget name="item" layout="docking" default-dock="left"{
+			label data-bind="reg-name" # 1st column
+			label data-bind="reg-value"# 2nd column
+		}
+	}
+}*/

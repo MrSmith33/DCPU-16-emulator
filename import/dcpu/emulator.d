@@ -8,6 +8,7 @@ Authors: Andrey Penechko.
 module dcpu.emulator;
 
 import dcpu.dcpu;
+import std.conv : to;
 
 @safe nothrow:
 
@@ -160,7 +161,7 @@ private:
 			case HWN: *a = numDevices; break;
 			case HWQ: queryHardwareInfo(*a); break;
 			case HWI: sendHardwareInterrupt(*a); break;
-			default : assert(false);
+			default : assert(false, "Unknown instruction " ~ to!string(opcode));
 		}
 	}
 

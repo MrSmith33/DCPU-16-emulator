@@ -41,6 +41,7 @@ struct Dcpu
 	ushort attachDevice(IDevice device) // TODO: checks
 	{
 		devices[nextHardwareId] = device;
+		device.attachDcpu(&this);
 		return nextHardwareId++;
 	}
 }

@@ -10,7 +10,7 @@ module dcpu.devices.idevice;
 import dcpu.dcpu;
 import dcpu.emulator;
 
-@safe nothrow:
+@trusted nothrow:
 
 interface IDevice
 {
