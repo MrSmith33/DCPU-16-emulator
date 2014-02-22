@@ -8,6 +8,7 @@ module application;
 
 import std.stdio : writeln;
 import std.string : format;
+import std.file : read;
 
 import anchovy.graphics.windows.glfwwindow;
 import anchovy.graphics.texture;
@@ -21,7 +22,9 @@ import dcpu.emulator;
 import dcpu.disassembler;
 import dcpu.dcpu;
 import dcpu.updatequeue;
+
 import dcpu.devices.lem1802;
+import dcpu.devices.genericclock;
 
 class EmulatorApplication : Application!GlfwWindow
 {
@@ -33,6 +36,8 @@ class EmulatorApplication : Application!GlfwWindow
 	Emulator em;
 	Lem1802 monitor;
 	Widget reg1, reg2, reg3;
+	bool dcpuRunning = false;
+	Widget runButton;
 
 	override void load(in string[] args)
 	{
@@ -41,26 +46,18 @@ class EmulatorApplication : Application!GlfwWindow
 		em = new Emulator();
 		monitor = new Lem1802;
 		em.dcpu.updateQueue = new UpdateQueue;
-		em.dcpu.attachDevice(monitor);
+		em.attachDevice(monitor);
+		em.attachDevice(new GenericClock);
 		writeln(monitor.bitmap.size);
 
-		em.dcpu.mem[0..78] = 
-		[0x8401, 0x8821, 0x8640, 0x9401, 0x8640, 0x9801, 0x8640, 0x7fc1,
-		0x1234, 0x004e, 0xc3c2, 0x004f, 0x77c1, 0x0050, 0x7fc1, 0x1234,
-		0x0051, 0x83c2, 0x0051, 0x77c1, 0x0052, 0x7fc3, 0x1234, 0x0053,
-		0x77c1, 0x0054, 0x7fc1, 0x1234, 0x0055, 0x7fc3, 0x0dea, 0x0055,
-		0x77c1, 0x0056, 0x7fc1, 0x1234, 0x0057, 0x8fc4, 0x0057, 0x77c1,
-		0x0058, 0x83c1, 0x0059, 0x8fc4, 0x0059, 0x77c1, 0x005a, 0x7fc1,
-		0x1234, 0x005b, 0x7fc5, 0xfffe, 0x005b, 0x77c1, 0x005c, 0x7fc1,
-		0x0021, 0x005d, 0x8fc6, 0x005d, 0x77c1, 0x005e, 0x7fc1, 0x1234,
-		0x005f, 0x87c6, 0x005f, 0x77c1, 0x0060, 0x7fc1, 0x0021, 0x0061,
-		0x7fc7, 0xfffe, 0x0061, 0x77c1, 0x0062, 0x8b83 ];
+		em.loadProgram(cast(ushort[])read("hello.bin"));
+
 
 		//em.stepInstructions(23);
 
 		writeln(em.dcpu.mem.length);
 		printMem(48, 63, 8, em.dcpu);
-		writeln("Cycles: ", em.cycles);
+		writeln("Cycles: ", em.dcpu.cycles);
 
 		// ----------------------------- Creating widgets -----------------------------
 		templateManager.parseFile("dcpu.sdl");
@@ -74,6 +71,9 @@ class EmulatorApplication : Application!GlfwWindow
 
 		auto stepButton = context.getWidgetById("step");
 		stepButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){step(); return true;});
+
+		runButton = context.getWidgetById("run");
+		runButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){runPause(); return true;});
 
 		auto dumpButton = context.getWidgetById("dump");
 		dumpButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){dump(); return true;});
@@ -89,8 +89,18 @@ class EmulatorApplication : Application!GlfwWindow
 		writeln("\n----------------------------- Load end -----------------------------\n");
 	}
 
+	void runPause()
+	{
+		dcpuRunning = !dcpuRunning;
+		if (dcpuRunning)
+			runButton.setProperty!"text"("Pause");
+		else
+			runButton.setProperty!"text"("Run");
+	}
+
 	void step()
 	{
+		if (dcpuRunning) return;
 		em.step();
 		printRegisters();
 	}
@@ -104,6 +114,12 @@ class EmulatorApplication : Application!GlfwWindow
 	{
 		monitor.updateFrame();
 	
+		if (dcpuRunning)
+		{
+			em.stepCycles(1666);
+			printRegisters();
+		}
+
 		super.update(dt);
 	}
 

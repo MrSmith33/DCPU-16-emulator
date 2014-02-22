@@ -1,19 +1,22 @@
 template:mainLayer {
 	tree layout="vertical" isVisible=false vexpand=true hexpand=true {
 		widget layout="horizontal" isVisible=false {
-			image id="monitor" minSize="272 208"
+			widget layout="horizontal" isVisible=false {
+				image id="monitor" minSize="272 208"
+			}
+
+			widget layout="vertical" style="button" {
+				label id="reg1"
+				label id="reg2"
+				label id="reg3"
+			}
 		}
 		widget layout="horizontal" isVisible=false {
 			text-button id="step" text="Step"
 			text-button id="dump" text="Dump"
-			text-button id="run" text="Run"
+			text-button id="run" text="Run" minSize="45 0"
 			text-button id="reset" text="Reset"
 			text-button id="disasm" text="Disassemble"
-		}
-		widget layout="vertical" style="button" {
-			label id="reg1"
-			label id="reg2"
-			label id="reg3"
 		}
 	}
 }

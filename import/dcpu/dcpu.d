@@ -24,6 +24,8 @@ struct Dcpu
 	ushort		ex;
 	ushort		ia;
 
+	ulong cycles; /// cycles done by DCPU.
+
 	ushort[0x10000] mem;
 
 	bool queueInterrupts = false;
@@ -44,7 +46,6 @@ struct Dcpu
 	ushort attachDevice(IDevice device) // TODO: checks
 	{
 		devices[nextHardwareId] = device;
-		device.attachDcpu(&this);
 		return nextHardwareId++;
 	}
 }
@@ -57,6 +58,8 @@ void reset(ref Dcpu data)
 	data.sp = 0;
 	data.ex = 0;
 	data.ia = 0;
+
+	data.cycles = 0;
 
 	data.queueInterrupts = false;
 	data.intQueue.clear();

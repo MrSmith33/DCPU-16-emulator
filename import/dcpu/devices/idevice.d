@@ -16,10 +16,10 @@ abstract class IDevice
 {
 
 	/// Saves dcpu reference internally for future use.
-	void attachDcpu(Dcpu* dcpu);
+	void attachEmulator(Emulator emulator);
 
 	/// Handles hardware interrupt and returns a number of cycles.
-	uint handleInterrupt(ref Emulator emulator);
+	uint handleInterrupt(Emulator emulator);
 
 	/// Called every application frame.
 	/// Can be used to update screens.

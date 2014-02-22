@@ -30,21 +30,23 @@ struct UpdateQueue
 
 		if (!empty && ticksAccumulated > queries[0].delay)
 		{
+			queries_loop:
 			foreach(ref query; queries)
 			{
-				if (ticksAccumulated >= query.delay)
+				ulong ticks = ticksAccumulated;
+				while (ticks >= query.delay)
 				{
+					ticks -= query.delay;
 					query.device.handleUpdateQuery(query.message, query.delay);
 					//writefln("delay %s", query.delay);
 					if (query.delay == 0) // remove query
 					{
 						destroy(query);
+						continue queries_loop;
 					}
 				}
-				else
-				{
-					query.delay -= ticksAccumulated;
-				}
+
+				query.delay -= ticks;
 			}
 
 			//writefln("queries %s", queries);
@@ -78,7 +80,7 @@ struct UpdateQueue
 	}
 
 	/// Adds update query
-	void addQuery(IDevice device, ulong delay, size_t message)
+	void addQuery(IDevice device, ulong delay, size_t message = 0)
 	{
 		//writefln("begin add %s, %s", device, queries);
 		ulong realDelay = delay + ticksAccumulated;

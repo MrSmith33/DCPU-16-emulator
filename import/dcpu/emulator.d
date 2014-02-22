@@ -11,18 +11,32 @@ import dcpu.dcpu;
 import std.conv : to;
 import std.stdio;
 
+import dcpu.devices.idevice;
+
 //@safe nothrow:
 
 /// Does actual interpreting of DCPU-16
 public class Emulator
 {
 	Dcpu dcpu; /// data storage: memory, registers.
-	ulong cycles; /// cycles done by DCPU.
+
+	void attachDevice(IDevice device)
+	{
+		dcpu.attachDevice(device);
+		device.attachEmulator(this);
+	}
+
+	void loadProgram(ushort[] binary)
+	{
+		ushort size = binary.length & 0xFFFF;
+
+		dcpu.mem[0..size] = binary[0..size];
+	}
 
 	/// Performs next instruction
 	void step()
 	{
-		ulong initialCycles = cycles;
+		ulong initialCycles = dcpu.cycles;
 
 		ushort instruction = dcpu.mem[dcpu.pc++];
 
@@ -42,7 +56,7 @@ public class Emulator
 			handleInterrupt();
 		}
 
-		ulong diff = cycles - initialCycles;
+		ulong diff = dcpu.cycles - initialCycles;
 
 		dcpu.updateQueue.onTick(diff);
 	}
@@ -51,13 +65,13 @@ public class Emulator
 	// Returns actual cycles done.
 	ulong stepCycles(ulong cyclesToStep)
 	{
-		ulong initialCycles = cycles;
-		while(cycles - initialCycles < cyclesToStep)
+		ulong initialCycles = dcpu.cycles;
+		while(dcpu.cycles - initialCycles < cyclesToStep)
 		{
 			step();
 		}
 
-		return cycles - initialCycles;
+		return dcpu.cycles - initialCycles;
 	}
 
 	// Steps instructionsToStep instructions.
@@ -95,7 +109,7 @@ private:
 
 		uint result;
 
-		cycles += basicCycles[opcode];
+		dcpu.cycles += basicCycles[opcode];
 
 		with(dcpu) switch (opcode)
 		{
@@ -137,7 +151,7 @@ private:
 						break;
 			case STI: result = a; ++reg[6]; ++reg[7]; break;
 			case STD: result = a; --reg[6]; --reg[7]; break;
-			default: writeln("Unknown instruction " ~ to!string(opcode)); //Invalid opcode
+			default: ;//writeln("Unknown instruction " ~ to!string(opcode)); //Invalid opcode
 		}
 
 		if (destinationType < 0x1F)
@@ -168,7 +182,7 @@ private:
 			case HWN: *a = numDevices; break;
 			case HWQ: queryHardwareInfo(*a); break;
 			case HWI: sendHardwareInterrupt(*a); break;
-			default : writeln("Unknown instruction " ~ to!string(opcode));
+			default : ;//writeln("Unknown instruction " ~ to!string(opcode));
 		}
 	}
 
@@ -200,7 +214,7 @@ private:
 	{
 		if (auto device = deviceIndex in dcpu.devices)
 		{
-			cycles += device.handleInterrupt(this);
+			dcpu.cycles += device.handleInterrupt(this);
 		}
 	}
 
@@ -245,7 +259,7 @@ private:
 			getOperand!true(instr >> 10); // TODO: optimize skipping
 			getOperand!false((instr >> 5) & 0x1F);
 
-			++cycles;
+			++dcpu.cycles;
 		}
 		while (opcode >= IFB && opcode <= IFU);
 	}
@@ -254,7 +268,6 @@ private:
 	void reset()
 	{
 		dcpu.reset();
-		cycles = 0;
 	}
 
 	/// Extracts operand from an instruction
@@ -274,7 +287,7 @@ private:
 			case 0x08: .. case 0x0f: // [register]
 				return &mem[reg[instr & 7]];
 			case 0x10: .. case 0x17: // [register + next word]
-				++cycles;
+				++dcpu.cycles;
 				return &mem[(reg[instr & 7] + mem[pc++]) & 0xffff];
 			case 0x18: // PUSH / POP
 				static if (isA)
@@ -284,7 +297,7 @@ private:
 			case 0x19: // [SP] / PEEK
 				return &mem[sp];
 			case 0x1a: // [SP + next word]
-				++cycles;
+				++dcpu.cycles;
 				return &mem[cast(ushort)(sp + pc++)];
 			case 0x1b: // SP
 				return &sp;
@@ -293,10 +306,10 @@ private:
 			case 0x1d: // EX
 				return &ex;
 			case 0x1e: // [next word]
-				++cycles;
+				++dcpu.cycles;
 				return &mem[mem[pc++]];
 			case 0x1f: // next word
-				++cycles;
+				++dcpu.cycles;
 				return &mem[pc++];
 			default: // 0xffff-0x1e (-1..30) (literal) (only for a)
 				return &literals[instr & 0x1F];

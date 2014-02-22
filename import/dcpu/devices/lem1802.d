@@ -58,14 +58,14 @@ public:
 		return _bitmap;
 	}
 
-	override void attachDcpu(Dcpu* dcpu)
+	override void attachEmulator(Emulator emulator)
 	{
-		_dcpu = dcpu;
+		_dcpu = &emulator.dcpu;
 		(cast(uint[])_bitmap.data)[] = 0xFF000000;
 	}
 
 	/// Handles hardware interrupt and returns a number of cycles.
-	override uint handleInterrupt(ref Emulator emulator)
+	override uint handleInterrupt(Emulator emulator)
 	{
 		ushort aRegister = emulator.dcpu.reg[0]; // A register
 		ushort bRegister = emulator.dcpu.reg[1]; // B register
