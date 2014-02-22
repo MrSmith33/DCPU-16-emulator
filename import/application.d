@@ -11,6 +11,7 @@ import std.string : format;
 
 import anchovy.graphics.windows.glfwwindow;
 import anchovy.graphics.texture;
+import anchovy.graphics.bitmap;
 import anchovy.gui;
 import anchovy.gui.guirenderer;
 
@@ -77,8 +78,6 @@ class EmulatorApplication : Application!GlfwWindow
 
 		auto disassembleButton = context.getWidgetById("disasm");
 		disassembleButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){disassembleMemory(); return true;});
-
-		context.getWidgetById("fonttex").setProperty!"texture"(guiRenderer.getFontTexture);
 
 		reg1 = context.getWidgetById("reg1");
 		reg2 = context.getWidgetById("reg2");

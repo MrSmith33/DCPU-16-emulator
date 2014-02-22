@@ -36,6 +36,8 @@ protected:
 	uint borderRGB;
 
 	bool blinkPhase;
+	bool enabled = false; 
+	bool splash = false;
 
 	enum numRows = 12;
 	enum numCols = 32;
@@ -59,6 +61,8 @@ public:
 	override void attachDcpu(Dcpu* dcpu)
 	{
 		_dcpu = dcpu;
+		//(cast(uint[])_bitmap.data)[] = 0xFF000000;
+		drawSplash();
 	}
 
 	/// Handles hardware interrupt and returns a number of cycles.
@@ -98,7 +102,10 @@ public:
 	/// Can be used to update screens.
 	override void update()
 	{
-		drawScreen();
+		if (enabled && !splash)
+		{
+			repaintScreen();
+		}
 	}
 
 	/// Returns: 32 bit word identifying the hardware id.
@@ -121,7 +128,7 @@ public:
 
 protected:
 
-	void drawScreen()
+	void repaintScreen()
 	{
 		if (_dcpu is null || videoAddress == 0) return;
 
@@ -242,20 +249,49 @@ protected:
 		colorData[$-borderSize * screenWidth..$][] = backRGB;
 	}
 
+	void drawSplash()
+	{
+		import std.bitmanip;
+		(cast(uint[])_bitmap.data)[] = splashBackRgb;
+		
+		BitArray array;
+		array.init(cast(void[])splashImage, splashImage.length * 16);
+
+		foreach(line; 0..splashHeight)
+		{
+			foreach(col; 0.. splashWidth)
+			{
+				(cast(uint[])_bitmap.data)[(splashY+line+borderSize) * bitmap.size.x + splashX + col + borderSize] =
+					array[line * splashWidth + col] ? splashForeRgb : splashBackRgb; 
+			}
+		}
+	}
+
 	void mapScreen(ushort b)
 	{
-		writeln("mapped videoAddress to ", b);
+		if (b != 0 && videoAddress == 0)
+		{
+			//splash = true;
+			enabled = true;
+			drawSplash();
+			// add to update queue.
+		}
+		else if (b == 0)
+		{
+			(cast(uint[])_bitmap.data)[] = 0xFF000000;
+		}
+
 		videoAddress = b;
 	}
 
 	void mapFont(ushort b)
 	{
-
+		fontAddress = b;
 	}
 
 	void mapPalette(ushort b)
 	{
-		
+		paletteAddress = b;
 	}
 
 	void setBorderColor(ushort b)
@@ -327,3 +363,29 @@ static immutable uint[] defaultFont = [
 	0x6c106c00, 0x4c503c00, 0x64544c00, 0x08364100,
 	0x00770000, 0x41360800, 0x02010201, 0x02050200
 ];
+
+// 1bit image. 1 - splashForeRgb, 0 - splashBackRgb.
+// only center piece 52 x 36.
+static immutable ushort[] splashImage = [
+0x6000, 0x0180, 0x0000, 0x0000, 0x1806, 0x0000, 0x0000, 0x80e0, 0x0001, 0x0000,
+0x0c00, 0x0018, 0x0000, 0xc000, 0x0181, 0x0000, 0x3000, 0x1818, 0x0000, 0x0000,
+0x8383, 0x0001, 0x0000, 0x3070, 0x0018, 0x0000, 0x0700, 0x8187, 0x0fff, 0xf000,
+0x1860, 0xfff8, 0x0000, 0x8e0f, 0x0001, 0x0000, 0xc1f0, 0x0018, 0x0000, 0x1b00,
+0x019c, 0x0000, 0xb000, 0x1983, 0x0000, 0x0000, 0xb833, 0x0001, 0x0000, 0x0730,
+0x001b, 0x0000, 0x6300, 0x01f0, 0x0000, 0x3000, 0x1e0e, 0x0000, 0x0000, 0xe0c3,
+0xff81, 0x000f, 0x1c30, 0xf81c, 0x00ff, 0x8300, 0x01c1, 0x0000, 0x3000, 0x1838,
+0x0000, 0x0000, 0x8303, 0x0001, 0x0000, 0x7030, 0x0000, 0x0000, 0x0300, 0x0006,
+0x0000, 0x3000, 0x00e0, 0x0000, 0x0000, 0x0c03, 0x0000, 0x0000, 0xc030, 0x0000,
+0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x6530, 0xb8b8, 0xcbba,
+0x75ca, 0x8987, 0x9919, 0x5e64, 0xb852, 0x92bb, 0xaa6a, 0x0000, 
+];
+
+enum splashBackRgb = 0xFFAA0000;
+enum splashForeRgb = 0xFF00FFFF;
+
+enum splashWidth = 52;
+enum splashHeight = 36;
+
+enum splashX = 38;
+enum splashY = 25;
