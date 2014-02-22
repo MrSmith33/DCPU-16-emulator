@@ -3,10 +3,14 @@ DCPU-16 emulator
 **Alpha stage**
 ----------------
 
-Planned features:
+Already works:
  - emulator
+ - disassembler
+ - LEM1802 monitor
+ - execution by step
+ - GUI uses [anchovy](https://github.com/MrSmith33/anchovy) library
+
+Planned features:
  - debugger
  - assembler (0xSCA compatible)
- - disassembler
  - non-standart devices
- - develop test program that will test full DCPU-16 specification and all 0xSCA assembler features
