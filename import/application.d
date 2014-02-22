@@ -20,6 +20,7 @@ import anchovy.gui.application.application;
 import dcpu.emulator;
 import dcpu.disassembler;
 import dcpu.dcpu;
+import dcpu.updatequeue;
 import dcpu.devices.lem1802;
 
 class EmulatorApplication : Application!GlfwWindow
@@ -39,6 +40,7 @@ class EmulatorApplication : Application!GlfwWindow
 
 		em = new Emulator();
 		monitor = new Lem1802;
+		em.dcpu.updateQueue = new UpdateQueue;
 		em.dcpu.attachDevice(monitor);
 		writeln(monitor.bitmap.size);
 
@@ -100,7 +102,7 @@ class EmulatorApplication : Application!GlfwWindow
 
 	override void update(double dt)
 	{
-		monitor.update();
+		monitor.updateFrame();
 	
 		super.update(dt);
 	}
@@ -119,7 +121,7 @@ class EmulatorApplication : Application!GlfwWindow
 			for(uint pad = 0; pad < padding; ++pad)
 			{
 				if (end <= i+pad)
-					writef("%04x ", 0);			
+					writef("%04x ", 0);
 				else
 					writef("%04x ", dcpu.mem[i+pad]);
 			}

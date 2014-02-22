@@ -61,8 +61,7 @@ public:
 	override void attachDcpu(Dcpu* dcpu)
 	{
 		_dcpu = dcpu;
-		//(cast(uint[])_bitmap.data)[] = 0xFF000000;
-		drawSplash();
+		(cast(uint[])_bitmap.data)[] = 0xFF000000;
 	}
 
 	/// Handles hardware interrupt and returns a number of cycles.
@@ -100,12 +99,32 @@ public:
 
 	/// Called every application frame.
 	/// Can be used to update screens.
-	override void update()
+	override void updateFrame()
 	{
 		if (enabled && !splash)
 		{
 			repaintScreen();
 		}
+	}
+
+	override void handleUpdateQuery(ref size_t message, ref ulong delay)
+	{
+		//writefln("1 handleUpdateQuery message %s delay %s", message, delay);
+		if (message == 0) // remove splash
+		{
+			message = 1;
+			delay = 2;
+			splash = false;
+		}
+		else if (message == 1)
+		{
+			blinkPhase = !blinkPhase;
+			delay = 2;
+		}
+		else
+			writefln("unknown message %s", message);
+
+		//writefln("2 handleUpdateQuery message %s delay %s", message, delay);
 	}
 
 	/// Returns: 32 bit word identifying the hardware id.
@@ -194,15 +213,16 @@ protected:
 		uint cellX = borderSize + x * charWidth;
 		uint cellY = borderSize + y * charHeight;
 
-		ubyte[] data = _bitmap.data;
+		uint[] data = cast(uint[])_bitmap.data;
 
 		size_t dataPos; 
 		uint[] cellLine;
 
 		foreach(i; 0..8)
 		{
-			dataPos = cellX + screenWidth * cellY + i;
-			(cast(uint[])data)[dataPos .. dataPos + 16][] = color;
+			dataPos = cellX + screenWidth * (cellY + i);
+			cellLine = data[dataPos .. dataPos + 4];
+			cellLine[] = color;
 		}
 	}
 
@@ -216,37 +236,34 @@ protected:
 		size_t dataPos;
 		uint[] cellLine;
 
-		//writefln("x %s y %s cellX %s cellY %s", x, y, cellX, cellY);
 		foreach(i; 0..8)
 		{
 			dataPos = cellX + screenWidth * (cellY + i);
-			cellLine = colorData[dataPos .. dataPos + 16];
-			//writef("dataPos %s %s cellLine %s ", dataPos, dataPos+4, cellLine);
+			cellLine = colorData[dataPos .. dataPos + 4];
 
 			cellLine[0] = charData & (1 << (i +  0)) ? foreColor : backColor;
 			cellLine[1] = charData & (1 << (i + 24)) ? foreColor : backColor;
 			cellLine[2] = charData & (1 << (i + 16)) ? foreColor : backColor;
 			cellLine[3] = charData & (1 << (i +  8)) ? foreColor : backColor;
-			//writeln(cast(uint[4])data[dataPos .. dataPos + 16]);
 		}
 	}
 
 	void drawBorder()
 	{
-		uint backRGB = paletteToRGB8(borderColor);
+		uint borderRgb = paletteToRGB8(borderColor);
 		uint[] colorData = cast(uint[])_bitmap.data;
 
-		colorData[0..borderSize * screenWidth][] = backRGB;
+		colorData[0..borderSize * screenWidth][] = borderRgb;
 
 		size_t topOffset;
 		foreach(line; borderSize..screenHeight - borderSize)
 		{
 			topOffset = line * screenWidth;
-			colorData[topOffset..topOffset + borderSize][] = backRGB;
-			colorData[topOffset + screenWidth - borderSize .. topOffset + screenWidth][] = backRGB;
+			colorData[topOffset..topOffset + borderSize][] = borderRgb;
+			colorData[topOffset + screenWidth - borderSize .. topOffset + screenWidth][] = borderRgb;
 		}
 
-		colorData[$-borderSize * screenWidth..$][] = backRGB;
+		colorData[$-borderSize * screenWidth..$][] = borderRgb;
 	}
 
 	void drawSplash()
@@ -265,20 +282,27 @@ protected:
 					array[line * splashWidth + col] ? splashForeRgb : splashBackRgb; 
 			}
 		}
+
+		_bitmap.dataChanged.emit();
 	}
 
 	void mapScreen(ushort b)
 	{
 		if (b != 0 && videoAddress == 0)
 		{
-			//splash = true;
+			splash = true;
 			enabled = true;
+
 			drawSplash();
-			// add to update queue.
+
+			_dcpu.updateQueue.addQuery(this, 2, 0);
 		}
 		else if (b == 0)
 		{
 			(cast(uint[])_bitmap.data)[] = 0xFF000000;
+			_dcpu.updateQueue.removeQueries(this);
+
+			enabled = false;
 		}
 
 		videoAddress = b;

@@ -17,11 +17,13 @@ import std.stdio;
 public class Emulator
 {
 	Dcpu dcpu; /// data storage: memory, registers.
-	size_t cycles; /// cycles done by DCPU.
+	ulong cycles; /// cycles done by DCPU.
 
 	/// Performs next instruction
 	void step()
 	{
+		ulong initialCycles = cycles;
+
 		ushort instruction = dcpu.mem[dcpu.pc++];
 
 		if ((instruction & 0x1F) != 0) //basic
@@ -39,13 +41,17 @@ public class Emulator
 		{
 			handleInterrupt();
 		}
+
+		ulong diff = cycles - initialCycles;
+
+		dcpu.updateQueue.onTick(diff);
 	}
 
 	// Tries to do cyclesToStep cycles of dcpu.
 	// Returns actual cycles done.
-	size_t stepCycles(size_t cyclesToStep)
+	ulong stepCycles(ulong cyclesToStep)
 	{
-		size_t initialCycles = cycles;
+		ulong initialCycles = cycles;
 		while(cycles - initialCycles < cyclesToStep)
 		{
 			step();
@@ -55,7 +61,7 @@ public class Emulator
 	}
 
 	// Steps instructionsToStep instructions.
-	void stepInstructions(size_t instructionsToStep)
+	void stepInstructions(ulong instructionsToStep)
 	{
 		foreach(_; 0..instructionsToStep)
 			step();

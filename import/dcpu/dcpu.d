@@ -11,6 +11,7 @@ import std.algorithm : fill;
 
 import dcpu.devices.idevice;
 import dcpu.interruptqueue;
+import dcpu.updatequeue;
 
 @safe nothrow:
 
@@ -27,6 +28,8 @@ struct Dcpu
 
 	bool queueInterrupts = false;
 	InterruptQueue intQueue;
+
+	UpdateQueue* updateQueue;
 	
 	private ushort nextHardwareId = 0;
 	IDevice[ushort] devices;

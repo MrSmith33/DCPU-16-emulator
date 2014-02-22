@@ -12,8 +12,9 @@ import dcpu.emulator;
 
 @trusted nothrow:
 
-interface IDevice
+abstract class IDevice
 {
+
 	/// Saves dcpu reference internally for future use.
 	void attachDcpu(Dcpu* dcpu);
 
@@ -22,7 +23,12 @@ interface IDevice
 
 	/// Called every application frame.
 	/// Can be used to update screens.
-	void update();
+	void updateFrame();
+
+	/// Must handle previosly posted update query.
+	/// If next updates is not needed must set delay to zero.
+	/// If set to non-zero will be called after delay cycles elapsed with provided message.
+	void handleUpdateQuery(ref size_t message, ref ulong delay);
 
 	/// Returns: 32 bit word identifying the hardware id.
 	uint hardwareId() @property;
