@@ -107,10 +107,10 @@ private:
 	{
 		ushort opcode = instruction & 0x1F;
 
-		ushort a = *getOperand!true(instruction >> 10);
+		ushort a = *getOperand!true(instruction >> 10); // a
 
 		ushort destinationType = (instruction >> 5) & 0x1F;
-		ushort* destination = getOperand!false(destinationType);
+		ushort* destination = getOperand!false(destinationType); // b
 		ushort  b = *destination;
 
 		uint result;
@@ -130,7 +130,7 @@ private:
 			case DVI: if (a==0){ex = 0; result = 0;}
 						else {
 							result = cast(short)b/cast(short)a;
-							ex = ((b << 16)/a) & 0xffff;
+							ex = ((cast(short)b << 16)/cast(short)a) & 0xffff;
 						} break; // TODO:test
 			case MOD: result = a == 0 ? 0 : b % a; break;
 			case MDI: result = a == 0 ? 0 : cast(short)b % cast(short)a; break;
@@ -141,14 +141,14 @@ private:
 			case ASR: result = cast(short)b >>> a;
 						ex = ((b<<16)>>>a) & 0xffff; break;
 			case SHL: result = b << a; ex = ((b<<a)>>16) & 0xffff; break;
-			case IFB: if ((b & a)==0) skip(); return; // TODO:test
-			case IFC: if ((b & a)!=0) skip(); return; // TODO:test
-			case IFE: if (b != a) skip(); return; // TODO:test
-			case IFN: if (b == a) skip(); return; // TODO:test
-			case IFG: if (b <= a) skip(); return; // TODO:test
-			case IFA: if (cast(short)b <= cast(short)a) skip(); return; // TODO:test
-			case IFL: if (b >= a) skip(); return; // TODO:test
-			case IFU: if (cast(short)b >= cast(short)a) skip(); return; // TODO:test
+			case IFB: if ((b & a)==0) skipIfs(); return; // TODO:test
+			case IFC: if ((b & a)!=0) skipIfs(); return; // TODO:test
+			case IFE: if (b != a) skipIfs(); return; // TODO:test
+			case IFN: if (b == a) skipIfs(); return; // TODO:test
+			case IFG: if (b <= a) skipIfs(); return; // TODO:test
+			case IFA: if (cast(short)b <= cast(short)a) skipIfs(); return; // TODO:test
+			case IFL: if (b >= a) skipIfs(); return; // TODO:test
+			case IFU: if (cast(short)b >= cast(short)a) skipIfs(); return; // TODO:test
 			case ADX: result = b + a + ex;
 						ex = result >> 16 ? 1 : 0; break;
 			case SBX: result = b - a + ex; ex = 0;
@@ -213,6 +213,10 @@ private:
 			dcpu.reg[2] = device.hardwareVersion;
 			cast(uint[1])dcpu.reg[3..5] = device.manufacturer;
 		}
+		else
+		{
+			dcpu.reg[0..5] = 0;
+		}
 	}
 
 	/// Sends an interrupt to hardware deviceIndex
@@ -252,22 +256,33 @@ private:
   	+ conditional instruction has been skipped. This lets you easily chain
   	+ conditionals. Interrupts are not triggered while the DCPU-16 is skipping.
 	+/
+	void skipIfs()
+	{
+		while ((dcpu.mem[dcpu.pc] & 0x1f) >= IFB && (dcpu.mem[dcpu.pc] & 0x1f) <= IFU)
+		{
+			skip();
+		}
+
+		skip();
+	}
+
 	void skip()
 	{
-		ushort opcode;
-		ushort instr;
+		ulong cycles = dcpu.cycles;
+		ushort instr = dcpu.mem[dcpu.pc++];
+		ushort opcode = instr & 0x1f;
 
-		do
+		if (opcode != 0) //basic
 		{
-			instr = dcpu.mem[dcpu.pc++];
-			opcode = instr & 0x1f;
-
-			getOperand!true(instr >> 10); // TODO: optimize skipping
+			getOperand!true(instr >> 10);
 			getOperand!false((instr >> 5) & 0x1F);
-
-			++dcpu.cycles;
 		}
-		while (opcode >= IFB && opcode <= IFU);
+		else //special
+		{
+			getOperand!true(instr >> 10);
+		}			
+
+		dcpu.cycles = cycles + 1;
 	}
 
 	/// Extracts operand from an instruction

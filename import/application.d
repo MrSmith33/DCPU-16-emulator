@@ -39,7 +39,7 @@ class EmulatorApplication : Application!GlfwWindow
 	Widget reg1, reg2, reg3;
 	bool dcpuRunning = false;
 	Widget runButton;
-	string file = "tester.bin";
+	string file = "hello.bin";
 
 	void swapFileEndian(string filename)
 	{
@@ -68,6 +68,12 @@ class EmulatorApplication : Application!GlfwWindow
 
 	override void load(in string[] args)
 	{
+		if (args.length > 1)
+		{
+			file = args[1];
+			writefln("loading '%s'", file);
+		}
+
 		fpsHelper.limitFps = true;
 
 		em = new Emulator();
