@@ -39,6 +39,11 @@ public:
 	{
 		_emulator = emulator;
 		_dcpu = &emulator.dcpu;
+
+		ticks = 0;
+		divider = 0;
+		tickPeriod = 0;
+		interruptMessage = 0;
 	}
 
 	/// Handles hardware interrupt and returns a number of cycles.
@@ -59,10 +64,10 @@ public:
 
 				if (divider != 0)
 				{
-					tickPeriod = 100000 / (60 / divider);
+					tickPeriod = cast(ulong)(100000.0 / (60.0 / divider));
 					_dcpu.updateQueue.addQuery(this, tickPeriod, 0);
 				}
-
+				ticks = 0;
 				initialCycles = _dcpu.cycles;
 				return 0;
 			case 1:
@@ -96,7 +101,10 @@ public:
 			foreach(i; 0..totalTicks-ticks)
 			{
 				++ticks;
-				_emulator.triggerInterrupt(interruptMessage);
+				if (interruptMessage > 0)
+				{
+					_emulator.triggerInterrupt(interruptMessage);
+				}
 			}
 		}
 

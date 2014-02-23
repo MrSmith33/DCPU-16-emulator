@@ -57,19 +57,20 @@ string[] disassemble(ushort[] memoryChunk)
 	while(pointer < memoryChunk.length)
 	{
 		string instrStr;
+		ushort address = pointer;
 		ushort instr = memoryChunk[pointer++];
 		if ((instr & 0x1F) != 0)
 		{
 			string a = decodeOperand!true(instr >> 10);
 			string b = decodeOperand!false((instr >> 5) & 0x1F);
-			instrStr = basicOpcodes[instr & 0x1F] ~ " " ~ b ~ ", " ~ a;
+			instrStr = format("%04x: ",address) ~ basicOpcodes[instr & 0x1F] ~ " " ~ b ~ ", " ~ a;
 		}
 		else if (((instr >> 5) & 0x1F) != 0)
 		{
-			instrStr = specialOpcodes[(instr >> 5) & 0x1F] ~ " " ~ decodeOperand!true(instr >> 10);
+			instrStr = format("%04x: ",address) ~ specialOpcodes[(instr >> 5) & 0x1F] ~ " " ~ decodeOperand!true(instr >> 10);
 		}
 		else
-			instrStr = "??? ";
+			instrStr = format("%04x: ",address) ~ format("0x%02x 0x%02x, 0x%02x", instr & 0x1F, (instr >> 5) & 0x1F, instr >> 10);
 
 		lines ~= instrStr;
 	}

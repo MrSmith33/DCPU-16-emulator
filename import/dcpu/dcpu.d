@@ -64,6 +64,7 @@ void reset(ref Dcpu data)
 	data.queueInterrupts = false;
 	data.intQueue.clear();
 
+
 	data.devices = null;
 	data.nextHardwareId = 0;
 

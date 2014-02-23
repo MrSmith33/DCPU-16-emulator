@@ -33,7 +33,6 @@ protected:
 	ushort videoAddress;
 	ushort paletteAddress;
 	ushort borderColor;
-	uint borderRGB;
 
 	bool blinkPhase;
 	bool enabled = false; 
@@ -62,6 +61,12 @@ public:
 	{
 		_dcpu = &emulator.dcpu;
 		(cast(uint[])_bitmap.data)[] = 0xFF000000;
+		enabled = false;
+		splash = false;
+		fontAddress = 0;
+		videoAddress = 0;
+		paletteAddress = 0;
+		borderColor = 0;
 	}
 
 	/// Handles hardware interrupt and returns a number of cycles.

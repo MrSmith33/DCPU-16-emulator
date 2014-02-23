@@ -94,6 +94,12 @@ public class Emulator
 		}
 	}
 
+	/// Resets dcpu state and interpreter state to their initial state.
+	void reset()
+	{
+		dcpu.reset();
+	}
+
 private:
 
 	/// Performs basic instruction.
@@ -135,14 +141,14 @@ private:
 			case ASR: result = cast(short)b >>> a;
 						ex = ((b<<16)>>>a) & 0xffff; break;
 			case SHL: result = b << a; ex = ((b<<a)>>16) & 0xffff; break;
-			case IFB: if ((b & a)!=0) skip(); return; // TODO:test
-			case IFC: if ((b & a)==0) skip(); return; // TODO:test
-			case IFE: if (b == a) skip(); return; // TODO:test
-			case IFN: if (b != a) skip(); return; // TODO:test
-			case IFG: if (b > a) skip(); return; // TODO:test
-			case IFA: if (cast(short)b > cast(short)a) skip(); return; // TODO:test
-			case IFL: if (b < a) skip(); return; // TODO:test
-			case IFU: if (cast(short)b < cast(short)a) skip(); return; // TODO:test
+			case IFB: if ((b & a)==0) skip(); return; // TODO:test
+			case IFC: if ((b & a)!=0) skip(); return; // TODO:test
+			case IFE: if (b != a) skip(); return; // TODO:test
+			case IFN: if (b == a) skip(); return; // TODO:test
+			case IFG: if (b <= a) skip(); return; // TODO:test
+			case IFA: if (cast(short)b <= cast(short)a) skip(); return; // TODO:test
+			case IFL: if (b >= a) skip(); return; // TODO:test
+			case IFU: if (cast(short)b >= cast(short)a) skip(); return; // TODO:test
 			case ADX: result = b + a + ex;
 						ex = result >> 16 ? 1 : 0; break;
 			case SBX: result = b - a + ex; ex = 0;
@@ -179,7 +185,7 @@ private:
 						pc = pop();
 						break;
 			case IAQ: queueInterrupts = *a > 0; break;
-			case HWN: *a = numDevices; break;
+			case HWN: *a = numDevices; writefln("numDevices %s", numDevices);break;
 			case HWQ: queryHardwareInfo(*a); break;
 			case HWI: sendHardwareInterrupt(*a); break;
 			default : ;//writeln("Unknown instruction " ~ to!string(opcode));
@@ -262,12 +268,6 @@ private:
 			++dcpu.cycles;
 		}
 		while (opcode >= IFB && opcode <= IFU);
-	}
-
-	/// Resets dcpu state and interpreter state to their initial state.
-	void reset()
-	{
-		dcpu.reset();
 	}
 
 	/// Extracts operand from an instruction

@@ -8,7 +8,7 @@ module application;
 
 import std.stdio : writeln;
 import std.string : format;
-import std.file : read;
+import std.file : read, write;
 
 import anchovy.graphics.windows.glfwwindow;
 import anchovy.graphics.texture;
@@ -35,9 +35,36 @@ class EmulatorApplication : Application!GlfwWindow
 
 	Emulator em;
 	Lem1802 monitor;
+	GenericClock clock;
 	Widget reg1, reg2, reg3;
 	bool dcpuRunning = false;
 	Widget runButton;
+	string file = "tester.bin";
+
+	void swapFileEndian(string filename)
+	{
+		import std.bitmanip : swapEndian;
+		ubyte[] binary = cast(ubyte[])read(filename);
+		foreach(ref srt; cast(ushort[])binary)
+		{
+			srt = swapEndian(srt);
+		}
+		write(filename, cast(void[])binary);
+	}
+
+	ushort[] loadBinary(string filename)
+	{
+		ubyte[] binary = cast(ubyte[])read(filename);
+		assert(binary.length % 2 == 0);
+		return cast(ushort[])binary;
+	}
+
+	void attachDevices()
+	{
+		em.dcpu.updateQueue = new UpdateQueue;
+		em.attachDevice(monitor);
+		em.attachDevice(clock);
+	}
 
 	override void load(in string[] args)
 	{
@@ -45,19 +72,10 @@ class EmulatorApplication : Application!GlfwWindow
 
 		em = new Emulator();
 		monitor = new Lem1802;
-		em.dcpu.updateQueue = new UpdateQueue;
-		em.attachDevice(monitor);
-		em.attachDevice(new GenericClock);
-		writeln(monitor.bitmap.size);
-
-		em.loadProgram(cast(ushort[])read("hello.bin"));
-
-
-		//em.stepInstructions(23);
-
-		writeln(em.dcpu.mem.length);
-		printMem(48, 63, 8, em.dcpu);
-		writeln("Cycles: ", em.dcpu.cycles);
+		clock = new GenericClock;
+		attachDevices();
+		
+		em.loadProgram(loadBinary(file));
 
 		// ----------------------------- Creating widgets -----------------------------
 		templateManager.parseFile("dcpu.sdl");
@@ -75,11 +93,23 @@ class EmulatorApplication : Application!GlfwWindow
 		runButton = context.getWidgetById("run");
 		runButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){runPause(); return true;});
 
+		auto resetButton = context.getWidgetById("reset");
+		resetButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){
+			em.reset();
+			attachDevices();
+			em.loadProgram(loadBinary(file));
+			printRegisters();
+			return true;
+		});
+
 		auto dumpButton = context.getWidgetById("dump");
 		dumpButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){dump(); return true;});
 
 		auto disassembleButton = context.getWidgetById("disasm");
 		disassembleButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){disassembleMemory(); return true;});
+
+		auto swapButton = context.getWidgetById("swap");
+		swapButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){swapFileEndian(file); return true;});
 
 		reg1 = context.getWidgetById("reg1");
 		reg2 = context.getWidgetById("reg2");
