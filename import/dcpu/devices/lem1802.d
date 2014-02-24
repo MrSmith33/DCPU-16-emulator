@@ -26,6 +26,7 @@ import dcpu.dcpu;
 class Lem1802 : IDevice
 {
 protected:
+	Emulator _emulator;
 	Dcpu* _dcpu;
 	Bitmap _bitmap;
 
@@ -37,6 +38,9 @@ protected:
 	bool blinkPhase;
 	bool enabled = false; 
 	bool splash = false;
+
+	uint blinkInterval = 70000;
+	uint splashDelay = 70000;
 
 	enum numRows = 12;
 	enum numCols = 32;
@@ -59,6 +63,7 @@ public:
 
 	override void attachEmulator(Emulator emulator)
 	{
+		_emulator = emulator;
 		_dcpu = &emulator.dcpu;
 		(cast(uint[])_bitmap.data)[] = 0xFF000000;
 		enabled = false;
@@ -72,10 +77,10 @@ public:
 	}
 
 	/// Handles hardware interrupt and returns a number of cycles.
-	override uint handleInterrupt(Emulator emulator)
+	override uint handleInterrupt()
 	{
-		ushort aRegister = emulator.dcpu.reg[0]; // A register
-		ushort bRegister = emulator.dcpu.reg[1]; // B register
+		ushort aRegister = _emulator.dcpu.reg[0]; // A register
+		ushort bRegister = _emulator.dcpu.reg[1]; // B register
 
 		switch(aRegister)
 		{
@@ -120,13 +125,13 @@ public:
 		if (message == 0) // remove splash
 		{
 			message = 1;
-			delay = 70000;
+			delay = blinkInterval;
 			splash = false;
 		}
 		else if (message == 1)
 		{
 			blinkPhase = !blinkPhase;
-			delay = 70000;
+			delay = blinkInterval;
 		}
 		else
 			writefln("unknown message %s", message);
@@ -302,7 +307,7 @@ protected:
 
 			drawSplash();
 
-			_dcpu.updateQueue.addQuery(this, 70000, 0);
+			_dcpu.updateQueue.addQuery(this, splashDelay, 0);
 		}
 		else if (b == 0)
 		{

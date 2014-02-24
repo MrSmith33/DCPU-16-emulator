@@ -10,6 +10,8 @@ import std.stdio : writeln;
 import std.string : format;
 import std.file : read, write;
 
+import anchovy.core.input;
+
 import anchovy.graphics.windows.glfwwindow;
 import anchovy.graphics.texture;
 import anchovy.graphics.bitmap;
@@ -25,6 +27,7 @@ import dcpu.updatequeue;
 
 import dcpu.devices.lem1802;
 import dcpu.devices.genericclock;
+import dcpu.devices.generickeyboard;
 
 class EmulatorApplication : Application!GlfwWindow
 {
@@ -36,6 +39,7 @@ class EmulatorApplication : Application!GlfwWindow
 	Emulator em;
 	Lem1802 monitor;
 	GenericClock clock;
+	GenericKeyboard keyboard;
 	Widget reg1, reg2, reg3;
 	bool dcpuRunning = false;
 	Widget runButton;
@@ -64,6 +68,7 @@ class EmulatorApplication : Application!GlfwWindow
 		em.dcpu.updateQueue = new UpdateQueue;
 		em.attachDevice(monitor);
 		em.attachDevice(clock);
+		em.attachDevice(keyboard);
 	}
 
 	override void load(in string[] args)
@@ -79,6 +84,7 @@ class EmulatorApplication : Application!GlfwWindow
 		em = new Emulator();
 		monitor = new Lem1802;
 		clock = new GenericClock;
+		keyboard = new GenericKeyboard;
 		attachDevices();
 		
 		em.loadProgram(loadBinary(file));
@@ -92,6 +98,19 @@ class EmulatorApplication : Application!GlfwWindow
 		auto monitorWidget = context.getWidgetById("monitor");
 		auto texture = new Texture(monitor.bitmap, TextureTarget.target2d, TextureFormat.rgba);
 		monitorWidget.setProperty!("texture")(texture);
+		monitorWidget.addEventHandler(delegate bool(Widget widget, KeyPressEvent event){
+			writeln("KeyPressEvent");
+			keyboard.onKey(cast(KeyCode)event.keyCode, event.modifiers, true);
+			return true;
+		});
+		monitorWidget.addEventHandler(delegate bool(Widget widget, KeyReleaseEvent event){
+			keyboard.onKey(cast(KeyCode)event.keyCode, event.modifiers, false);
+			return true;
+		});
+		monitorWidget.addEventHandler(delegate bool(Widget widget, PointerPressEvent event){
+			return true;
+		});
+		monitorWidget.setProperty!"isFocusable"(true);
 
 		auto stepButton = context.getWidgetById("step");
 		stepButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){step(); return true;});
@@ -123,6 +142,11 @@ class EmulatorApplication : Application!GlfwWindow
 		printRegisters();
 
 		writeln("\n----------------------------- Load end -----------------------------\n");
+
+		/*foreach(i, code; bareScancodes)
+		{
+			writefln("%03s %03s %s %03s %s", i, code, cast(char)code, shiftScancodes[i], cast(char)shiftScancodes[i]);
+		}*/
 	}
 
 	void runPause()
@@ -148,21 +172,24 @@ class EmulatorApplication : Application!GlfwWindow
 
 	override void update(double dt)
 	{
-		monitor.updateFrame();
-	
+		super.update(dt);
+
 		if (dcpuRunning)
 		{
 			em.stepCycles(1666);
 			printRegisters();
 		}
 
-		super.update(dt);
+		monitor.updateFrame();
+		keyboard.updateFrame();
 	}
 
 	void disassembleMemory()
 	{
 		foreach(line; disassemble(em.dcpu.mem[0..80]))
+		{
 			writeln(line);
+		}
 	}
 
 	void printMem(ushort start, ushort end, ushort padding, ref Dcpu dcpu)

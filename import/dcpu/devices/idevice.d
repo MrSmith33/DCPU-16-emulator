@@ -19,7 +19,7 @@ abstract class IDevice
 	void attachEmulator(Emulator emulator);
 
 	/// Handles hardware interrupt and returns a number of cycles.
-	uint handleInterrupt(Emulator emulator);
+	uint handleInterrupt();
 
 	/// Called every application frame.
 	/// Can be used to update screens.

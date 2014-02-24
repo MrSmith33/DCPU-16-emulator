@@ -47,10 +47,10 @@ public:
 	}
 
 	/// Handles hardware interrupt and returns a number of cycles.
-	override uint handleInterrupt(Emulator emulator)
+	override uint handleInterrupt()
 	{
-		ushort aRegister = emulator.dcpu.reg[0]; // A register
-		ushort bRegister = emulator.dcpu.reg[1]; // B register
+		ushort aRegister = _emulator.dcpu.reg[0]; // A register
+		ushort bRegister = _emulator.dcpu.reg[1]; // B register
 
 		switch(aRegister)
 		{

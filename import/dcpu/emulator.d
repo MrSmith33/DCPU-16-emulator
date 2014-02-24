@@ -141,14 +141,14 @@ private:
 			case ASR: result = cast(short)b >>> a;
 						ex = ((b<<16)>>>a) & 0xffff; break;
 			case SHL: result = b << a; ex = ((b<<a)>>16) & 0xffff; break;
-			case IFB: if ((b & a)==0) skipIfs(); return; // TODO:test
-			case IFC: if ((b & a)!=0) skipIfs(); return; // TODO:test
-			case IFE: if (b != a) skipIfs(); return; // TODO:test
-			case IFN: if (b == a) skipIfs(); return; // TODO:test
-			case IFG: if (b <= a) skipIfs(); return; // TODO:test
-			case IFA: if (cast(short)b <= cast(short)a) skipIfs(); return; // TODO:test
-			case IFL: if (b >= a) skipIfs(); return; // TODO:test
-			case IFU: if (cast(short)b >= cast(short)a) skipIfs(); return; // TODO:test
+			case IFB: if ((b & a)==0) skipIfs(); return;
+			case IFC: if ((b & a)!=0) skipIfs(); return;
+			case IFE: if (b != a) skipIfs(); return;
+			case IFN: if (b == a) skipIfs(); return;
+			case IFG: if (b <= a) skipIfs(); return;
+			case IFA: if (cast(short)b <= cast(short)a) skipIfs(); return;
+			case IFL: if (b >= a) skipIfs(); return;
+			case IFU: if (cast(short)b >= cast(short)a) skipIfs(); return;
 			case ADX: result = b + a + ex;
 						ex = result >> 16 ? 1 : 0; break;
 			case SBX: result = b - a + ex; ex = 0;
@@ -224,7 +224,7 @@ private:
 	{
 		if (auto device = deviceIndex in dcpu.devices)
 		{
-			dcpu.cycles += device.handleInterrupt(this);
+			dcpu.cycles += device.handleInterrupt();
 		}
 	}
 
