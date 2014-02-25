@@ -88,39 +88,44 @@ public:
 
 	void onKey(KeyCode keyCode, KeyModifiers modifiers, bool pressed)
 	{
-		if (interruptMessage == 0) return;
+		//if (interruptMessage == 0) return;
 
 		ushort code = 0;
 
 		if (keyCode <= 348)
 		{
-			if (modifiers & KeyModifiers.SHIFT)
-			{
-				code = shiftScancodes[keyCode];
-			}
-			else
-			{
+			
+			//if (modifiers & KeyModifiers.SHIFT)
+			//{
+			////	writefln("with shift %b", modifiers);
+			//	code = shiftScancodes[keyCode];
+			//}
+			//else
+			//{
+				//writefln("without shift");
 				code = bareScancodes[keyCode];
-			}
+			//}
 		}
 
 		if (code != 0)
 		{
-			buffer ~= code;
-			writefln("key %s %s", cast(char)code, pressed ? "pressed" : "released");
+			
+			//writefln("key %s %s %s", code, cast(char)code, pressed ? "pressed" : "released");
 
 			if (code >= 0x09 && code <= 0x91)
 			{
 				if (pressed)
 				{
-					/*if ((code >= 0x20 && code <= 0x7f) || code == 0x09) // Printable
-					{
-
-					}*/
+					buffer ~= code;
 					pressedKeys[code] = true;
 				}
 				else
 				{
+					if (!isPrintableChar(code)) // Printable
+					{
+						buffer ~= code;
+					}
+					
 					pressedKeys[code] = false;
 				}
 			}
@@ -131,6 +136,11 @@ public:
 				triggeredInterrupt = true;
 			}
 		}
+	}
+
+	bool isPrintableChar(ushort charCode)
+	{
+		return (charCode >= 0x20 && charCode <= 0x7f) || charCode == 0x09;
 	}
 
 	/// Called when application does rendering
