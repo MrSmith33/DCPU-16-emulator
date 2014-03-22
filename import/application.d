@@ -24,6 +24,7 @@ import dcpu.emulator;
 import dcpu.disassembler;
 import dcpu.dcpu;
 import dcpu.updatequeue;
+import memoryview;
 
 import dcpu.devices.lem1802;
 import dcpu.devices.genericclock;
@@ -41,6 +42,8 @@ class EmulatorApplication : Application!GlfwWindow
 	GenericClock clock;
 	GenericKeyboard keyboard;
 	Widget reg1, reg2, reg3;
+	MemoryView memoryList;
+
 	bool dcpuRunning = false;
 	Widget runButton;
 	string file = "hello.bin";
@@ -67,8 +70,8 @@ class EmulatorApplication : Application!GlfwWindow
 	{
 		em.dcpu.updateQueue = new UpdateQueue;
 		em.attachDevice(monitor);
-		em.attachDevice(clock);
 		em.attachDevice(keyboard);
+		em.attachDevice(clock);
 	}
 
 	override void load(in string[] args)
@@ -115,6 +118,12 @@ class EmulatorApplication : Application!GlfwWindow
 		auto stepButton = context.getWidgetById("step");
 		stepButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){step(); return true;});
 
+		auto stepButton10 = context.getWidgetById("step10");
+		stepButton10.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){em.stepInstructions(10); printRegisters(); return true;});
+		auto stepButton100 = context.getWidgetById("step100");
+		stepButton100.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){em.stepInstructions(100); printRegisters(); return true;});
+		
+
 		runButton = context.getWidgetById("run");
 		runButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){runPause(); return true;});
 
@@ -141,6 +150,10 @@ class EmulatorApplication : Application!GlfwWindow
 		reg3 = context.getWidgetById("reg3");
 		printRegisters();
 
+		memoryList = new MemoryView(&em.dcpu);
+		auto memoryView = context.getWidgetById("memoryview");
+		memoryView.setProperty!("list", List!dstring)(memoryList);
+
 		writeln("\n----------------------------- Load end -----------------------------\n");
 
 		/*foreach(i, code; bareScancodes)
@@ -163,6 +176,7 @@ class EmulatorApplication : Application!GlfwWindow
 		if (dcpuRunning) return;
 		em.step();
 		printRegisters();
+		memoryList.listChangedSignal.emit();
 	}
 
 	void dump()

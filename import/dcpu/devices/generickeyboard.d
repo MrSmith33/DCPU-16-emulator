@@ -69,12 +69,14 @@ public:
 				{
 					_emulator.dcpu.reg[2] = 0;
 				}
+				if (_emulator.dcpu.reg[2])writeln("next key ", _emulator.dcpu.reg[2]);
 				return 0;
 			case 2:
 				if (bRegister <= 0x91)
 					_emulator.dcpu.reg[2] = pressedKeys[bRegister];
 				else
 					_emulator.dcpu.reg[2] = 0;
+				if (_emulator.dcpu.reg[2])writeln("is key pressed ", _emulator.dcpu.reg[2]);
 				return 0;
 			case 3:
 				interruptMessage = bRegister;
@@ -117,20 +119,21 @@ public:
 				if (pressed)
 				{
 					buffer ~= code;
-					pressedKeys[code] = true;
+					//pressedKeys[code] = true;
 				}
 				else
 				{
-					if (!isPrintableChar(code)) // Printable
+					/*if (!isPrintableChar(code)) // Printable
 					{
 						buffer ~= code;
-					}
+					}*/
 					
-					pressedKeys[code] = false;
+					//pressedKeys[code] = false;
 				}
+				writefln("%s %s", code, pressedKeys[code]);
 			}
 
-			if (!triggeredInterrupt)
+			if (!triggeredInterrupt && interruptMessage > 0)
 			{
 				_emulator.triggerInterrupt(interruptMessage);
 				triggeredInterrupt = true;
