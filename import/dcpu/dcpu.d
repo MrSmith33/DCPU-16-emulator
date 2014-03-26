@@ -18,11 +18,25 @@ import dcpu.updatequeue;
 /// DCPU-16 memory and registers storage.
 struct Dcpu
 {
-	ushort[8]	reg;
-	ushort		pc;
-	ushort		sp;
-	ushort		ex;
-	ushort		ia;
+	union
+	{
+		ushort[12]	reg;
+		struct
+		{
+			ushort reg_a;  //0
+			ushort reg_b;  //1
+			ushort reg_c;  //2
+			ushort reg_x;  //3
+			ushort reg_y;  //4
+			ushort reg_z;  //5
+			ushort reg_i;  //6
+			ushort reg_j;  //7
+			ushort reg_sp; //8
+			ushort reg_pc; //9
+			ushort reg_ex; //10
+			ushort reg_ia; //11
+		}
+	}
 
 	ulong cycles; /// cycles done by DCPU.
 
@@ -53,11 +67,7 @@ struct Dcpu
 /// Resets dcpu to its initial state.
 void reset(ref Dcpu data)
 {
-	data.reg = [0, 0, 0, 0, 0, 0, 0, 0];
-	data.pc = 0;
-	data.sp = 0;
-	data.ex = 0;
-	data.ia = 0;
+	data.reg[] = 0;
 
 	data.cycles = 0;
 

@@ -38,7 +38,7 @@ public class Emulator
 	{
 		ulong initialCycles = dcpu.cycles;
 
-		ushort instruction = dcpu.mem[dcpu.pc++];
+		ushort instruction = dcpu.mem[dcpu.reg_pc++];
 
 		if ((instruction & 0x1F) != 0) //basic
 		{
@@ -121,26 +121,26 @@ private:
 		{
 			case 0x00 : assert(false); // Special opcode. Execution never goes here.
 			case SET: result = a; break;
-			case ADD: result = b + a; ex = result >> 16; break;
-			case SUB: result = b - a; ex = (a > b) ? 0xFFFF : 0; break;
-			case MUL: result = b * a; ex = result >> 16; break;
-			case MLI: result = cast(short)a * cast(short)b; ex = result >> 16; break;
-			case DIV: if (a==0){ex = 0; result = 0;}
-						else {result = b/a; ex = ((b << 16)/a) & 0xffff;} break; // TODO:test
-			case DVI: if (a==0){ex = 0; result = 0;}
+			case ADD: result = b + a; reg_ex = result >> 16; break;
+			case SUB: result = b - a; reg_ex = (a > b) ? 0xFFFF : 0; break;
+			case MUL: result = b * a; reg_ex = result >> 16; break;
+			case MLI: result = cast(short)a * cast(short)b; reg_ex = result >> 16; break;
+			case DIV: if (a==0){reg_ex = 0; result = 0;}
+						else {result = b/a; reg_ex = ((b << 16)/a) & 0xffff;} break; // TODO:test
+			case DVI: if (a==0){reg_ex = 0; result = 0;}
 						else {
 							result = cast(short)b/cast(short)a;
-							ex = ((cast(short)b << 16)/cast(short)a) & 0xffff;
+							reg_ex = ((cast(short)b << 16)/cast(short)a) & 0xffff;
 						} break; // TODO:test
 			case MOD: result = a == 0 ? 0 : b % a; break;
 			case MDI: result = a == 0 ? 0 : cast(short)b % cast(short)a; break;
 			case AND: result = a & b; break;
 			case BOR: result = a | b; break;
 			case XOR: result = a ^ b; break;
-			case SHR: result = b >> a; ex = ((b<<16)>>a) & 0xffff; break;
+			case SHR: result = b >> a; reg_ex = ((b<<16)>>a) & 0xffff; break;
 			case ASR: result = cast(short)b >>> a;
-						ex = ((b<<16)>>>a) & 0xffff; break;
-			case SHL: result = b << a; ex = ((b<<a)>>16) & 0xffff; break;
+						reg_ex = ((b<<16)>>>a) & 0xffff; break;
+			case SHL: result = b << a; reg_ex = ((b<<a)>>16) & 0xffff; break;
 			case IFB: if ((b & a)==0) skipIfs(); return;
 			case IFC: if ((b & a)!=0) skipIfs(); return;
 			case IFE: if (b != a) skipIfs(); return;
@@ -149,14 +149,14 @@ private:
 			case IFA: if (cast(short)b <= cast(short)a) skipIfs(); return;
 			case IFL: if (b >= a) skipIfs(); return;
 			case IFU: if (cast(short)b >= cast(short)a) skipIfs(); return;
-			case ADX: result = b + a + ex;
-						ex = result >> 16 ? 1 : 0; break;
-			case SBX: result = b - a + ex; ex = 0;
+			case ADX: result = b + a + reg_ex;
+						reg_ex = result >> 16 ? 1 : 0; break;
+			case SBX: result = b - a + reg_ex; reg_ex = 0;
 						if (ushort over = result >> 16)
-							ex = over == 0xFFFF ? 0xFFFF : 0x0001;
+							reg_ex = over == 0xFFFF ? 0xFFFF : 0x0001;
 						break;
-			case STI: result = a; ++reg[6]; ++reg[7]; break;
-			case STD: result = a; --reg[6]; --reg[7]; break;
+			case STI: result = a; ++reg_i; ++reg_j; break;
+			case STD: result = a; --reg_i; --reg_j; break;
 			default: ;//writeln("Unknown instruction " ~ to!string(opcode)); //Invalid opcode
 		}
 
@@ -174,15 +174,17 @@ private:
 
 		ushort opcode = (instruction >> 5) & 0x1F;
 
+		dcpu.cycles += basicCycles[opcode];
+
 		with(dcpu) switch (opcode)
 		{
-			case JSR: push(pc); pc = *a; break;
+			case JSR: push(reg_pc); reg_pc = *a; break;
 			case INT: triggerInterrupt(*a); break;
-			case IAG: *a = ia; break;
-			case IAS: ia = *a; break;
+			case IAG: *a = reg_ia; break;
+			case IAS: reg_ia = *a; break;
 			case RFI: queueInterrupts = false;
-						reg[0] = pop();
-						pc = pop();
+						reg_a = pop();
+						reg_pc = pop();
 						break;
 			case IAQ: queueInterrupts = *a > 0; break;
 			case HWN: *a = numDevices; writefln("numDevices %s", numDevices);break;
@@ -192,16 +194,16 @@ private:
 		}
 	}
 
-	/// Pushes value onto stack increasing SP.
+	/// Pushes value onto stack increasing reg_sp.
 	void push(ushort value)
 	{
-		dcpu.mem[--dcpu.sp] = value;
+		dcpu.mem[--dcpu.reg_sp] = value;
 	}
 
-	/// Pops value from stack decreasing SP.
+	/// Pops value from stack decreasing reg_sp.
 	ushort pop()
 	{
-		return dcpu.mem[++dcpu.sp];
+		return dcpu.mem[++dcpu.reg_sp];
 	}
 
 	/// Sets A, B, C, X, Y registers to information about hardware deviceIndex
@@ -228,22 +230,22 @@ private:
 		}
 	}
 
-	/// Handles interrupt from interrupt queue if IA != 0 && intQueue.length > 0
+	/// Handles interrupt from interrupt queue if reg_ia != 0 && intQueue.length > 0
 	void handleInterrupt()
 	{
 		if (dcpu.intQueue.size == 0) return;
 
 		ushort message = dcpu.intQueue.take();
 
-		if (dcpu.ia != 0)
+		if (dcpu.reg_ia != 0)
 		{
 			dcpu.queueInterrupts = true;
 
-			push(dcpu.pc);
-			push(dcpu.reg[0]);
+			push(dcpu.reg_pc);
+			push(dcpu.reg_a);
 
-			dcpu.pc = dcpu.ia;
-			dcpu.reg[0] = message;
+			dcpu.reg_pc = dcpu.reg_ia;
+			dcpu.reg_a = message;
 		}
 	}
 
@@ -258,7 +260,7 @@ private:
 	+/
 	void skipIfs()
 	{
-		while ((dcpu.mem[dcpu.pc] & 0x1f) >= IFB && (dcpu.mem[dcpu.pc] & 0x1f) <= IFU)
+		while ((dcpu.mem[dcpu.reg_pc] & 0x1f) >= IFB && (dcpu.mem[dcpu.reg_pc] & 0x1f) <= IFU)
 		{
 			skip();
 		}
@@ -269,7 +271,7 @@ private:
 	void skip()
 	{
 		ulong cycles = dcpu.cycles;
-		ushort instr = dcpu.mem[dcpu.pc++];
+		ushort instr = dcpu.mem[dcpu.reg_pc++];
 		ushort opcode = instr & 0x1f;
 
 		if (opcode != 0) //basic
@@ -303,29 +305,29 @@ private:
 				return &mem[reg[instr & 7]];
 			case 0x10: .. case 0x17: // [register + next word]
 				++dcpu.cycles;
-				return &mem[(reg[instr & 7] + mem[pc++]) & 0xffff];
+				return &mem[(reg[instr & 7] + mem[reg_pc++]) & 0xffff];
 			case 0x18: // PUSH / POP
 				static if (isA)
-					return &mem[sp++];
+					return &mem[reg_sp++];
 				else
-					return &mem[--sp];
+					return &mem[--reg_sp];
 			case 0x19: // [SP] / PEEK
-				return &mem[sp];
+				return &mem[reg_sp];
 			case 0x1a: // [SP + next word]
 				++dcpu.cycles;
-				return &mem[cast(ushort)(sp + pc++)];
+				return &mem[cast(ushort)(reg_sp + reg_pc++)];
 			case 0x1b: // SP
-				return &sp;
+				return &reg_sp;
 			case 0x1c: // PC
-				return &pc;
+				return &reg_pc;
 			case 0x1d: // EX
-				return &ex;
+				return &reg_ex;
 			case 0x1e: // [next word]
 				++dcpu.cycles;
-				return &mem[mem[pc++]];
+				return &mem[mem[reg_pc++]];
 			case 0x1f: // next word
 				++dcpu.cycles;
-				return &mem[pc++];
+				return &mem[reg_pc++];
 			default: // 0xffff-0x1e (-1..30) (literal) (only for a)
 				return &literals[instr & 0x1F];
 		}
@@ -341,13 +343,13 @@ private static ushort[0x20] literals =
 
 /// Table of basic instructions cost.
 private static immutable ubyte[] basicCycles = 
-	[0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1,
-	 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 3, 3, 0, 0, 2, 2];
+	[10, 1, 2, 2, 2, 2, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1,
+	 2, 2, 2, 2, 2, 2, 2, 2, 10, 10, 3, 3, 10, 10, 2, 2];
 
 /// Table of special instructions cost.
 private static immutable ubyte[] specialCycles = 
-	[0, 3, 0, 0, 0, 0, 0, 0, 4, 1, 1, 3, 2, 0, 0, 0,
-	 2, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+	[10, 3, 10, 10, 10, 10, 10, 10, 4, 1, 1, 3, 2, 10, 10, 10,
+	 2, 4, 4, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10];
 
 // Enums for opcodes. Just a bit of self documented code.
 private enum {SET = 0x01, ADD, SUB, MUL, MLI, DIV, DVI, MOD, MDI, AND, BOR, XOR, SHR, ASR,

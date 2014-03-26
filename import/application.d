@@ -41,7 +41,7 @@ class EmulatorApplication : Application!GlfwWindow
 	Lem1802 monitor;
 	GenericClock clock;
 	GenericKeyboard keyboard;
-	Widget reg1, reg2, reg3;
+	Widget reg1, reg2, reg3, reg4;
 	MemoryView memoryList;
 
 	bool dcpuRunning = false;
@@ -133,6 +133,7 @@ class EmulatorApplication : Application!GlfwWindow
 			attachDevices();
 			em.loadProgram(loadBinary(file));
 			printRegisters();
+			memoryList.listChangedSignal.emit();
 			return true;
 		});
 
@@ -148,11 +149,13 @@ class EmulatorApplication : Application!GlfwWindow
 		reg1 = context.getWidgetById("reg1");
 		reg2 = context.getWidgetById("reg2");
 		reg3 = context.getWidgetById("reg3");
+		reg4 = context.getWidgetById("reg4");
 		printRegisters();
 
 		memoryList = new MemoryView(&em.dcpu);
 		auto memoryView = context.getWidgetById("memoryview");
 		memoryView.setProperty!("list", List!dstring)(memoryList);
+		memoryView.setProperty!("sliderPos")(0.0);
 
 		writeln("\n----------------------------- Load end -----------------------------\n");
 
@@ -192,6 +195,7 @@ class EmulatorApplication : Application!GlfwWindow
 		{
 			em.stepCycles(1666);
 			printRegisters();
+			memoryList.listChangedSignal.emit();
 		}
 
 		monitor.updateFrame();
@@ -226,9 +230,10 @@ class EmulatorApplication : Application!GlfwWindow
 	{
 		with(em.dcpu)
 		{
-			reg1["text"] = format("PC 0x%04x SP 0x%04x EX 0x%04x IA 0x%04x", pc, sp, ex, ia);
+			reg1["text"] = format("PC 0x%04x SP 0x%04x EX 0x%04x IA 0x%04x", reg_pc, reg_sp, reg_ex, reg_ia);
 		 	reg2["text"] = format(" A 0x%04x  B 0x%04x  C 0x%04x  X 0x%04x", reg[0], reg[1], reg[2], reg[3]);
 		 	reg3["text"] = format(" Y 0x%04x  Z 0x%04x  I 0x%04x  J 0x%04x", reg[4], reg[5], reg[6], reg[7]);
+		 	reg4["text"] = format("Ticks: %s", em.dcpu.cycles);
 		}
 	}
 

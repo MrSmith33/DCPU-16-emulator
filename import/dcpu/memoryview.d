@@ -36,9 +36,9 @@ class MemoryView : List!dstring
 			size_t itemIndex = index * itemsPerLine + i;
 			
 			if (itemIndex >= 0x10000)
-				formattedWrite(writer, "%04x ", 0);
+				formattedWrite(writer, "%04X ", 0);
 			else
-				formattedWrite(writer, "%04x ", dcpu.mem[itemIndex]);
+				formattedWrite(writer, "%04X ", dcpu.mem[itemIndex]);
 		}
 		
 		return writer.data;

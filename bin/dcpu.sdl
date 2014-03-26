@@ -1,6 +1,6 @@
 template:mainLayer {
 	tree layout="horizontal" isVisible=false vexpand=true hexpand=true {
-		stringlist id="memoryview" vexpand=true minSize="385 100"
+		stringlist id="memoryview" vexpand=true minSize="385 100" sliderPos=0.0
 
 		widget layout="vertical" isVisible=false vexpand=true hexpand=true {
 			widget layout="horizontal" isVisible=false {
@@ -12,6 +12,7 @@ template:mainLayer {
 					label id="reg1"
 					label id="reg2"
 					label id="reg3"
+					label id="reg4"
 				}
 			}
 			widget layout="horizontal" isVisible=false {
@@ -39,6 +40,9 @@ template:text-button extends="button" {
 }
 
 template:stringlist {
+	properties {
+		sliderPos subwidget="vert-scroll"
+	}
 	tree layout="horizontal" vexpand=true {
 		widget name="viewport" layout="horizontal" clipContent=true hexpand=true vexpand=true style="edit"{
 			widget name="canvas" layout="vertical" vexpand=true spacing=0 padding=0 isVisible=false
