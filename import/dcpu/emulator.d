@@ -59,6 +59,7 @@ public class Emulator
 		ulong diff = dcpu.cycles - initialCycles;
 
 		dcpu.updateQueue.onTick(diff);
+		++dcpu.instructions;
 	}
 
 	// Tries to do cyclesToStep cycles of dcpu.
@@ -90,7 +91,7 @@ public class Emulator
 		}
 		else
 		{
-			dcpu.intQueue.add(message);
+			dcpu.intQueue.pushBack(message);
 		}
 	}
 
@@ -235,7 +236,7 @@ private:
 	{
 		if (dcpu.intQueue.size == 0) return;
 
-		ushort message = dcpu.intQueue.take();
+		ushort message = dcpu.intQueue.popFront();
 
 		if (dcpu.reg_ia != 0)
 		{

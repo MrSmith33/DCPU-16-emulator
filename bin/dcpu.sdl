@@ -8,18 +8,17 @@ template:mainLayer {
 					image id="monitor" minSize="408 312" #"136 104" #"272 208" #"408 312"
 				}
 
-				widget layout="vertical" style="button" {
+				widget layout="vertical" style="button" padding=2 {
 					label id="reg1"
 					label id="reg2"
 					label id="reg3"
 					label id="reg4"
 				}
 			}
-			widget layout="horizontal" isVisible=false {
+			widget layout="horizontal" isVisible=false padding=2 {
 				text-button id="step" text="Step"
 				text-button id="step10" text="Step 10"
 				text-button id="step100" text="Step 100"
-				text-button id="dump" text="Dump"
 				text-button id="run" text="Run" minSize="45 0"
 				text-button id="reset" text="Reset"
 				text-button id="disasm" text="Disassemble"

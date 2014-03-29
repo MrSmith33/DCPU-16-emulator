@@ -57,6 +57,7 @@ class EmulatorApplication : Application!GlfwWindow
 			srt = swapEndian(srt);
 		}
 		write(filename, cast(void[])binary);
+		reset(null, null);
 	}
 
 	ushort[] loadBinary(string filename)
@@ -128,17 +129,7 @@ class EmulatorApplication : Application!GlfwWindow
 		runButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){runPause(); return true;});
 
 		auto resetButton = context.getWidgetById("reset");
-		resetButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){
-			em.reset();
-			attachDevices();
-			em.loadProgram(loadBinary(file));
-			printRegisters();
-			memoryList.listChangedSignal.emit();
-			return true;
-		});
-
-		auto dumpButton = context.getWidgetById("dump");
-		dumpButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){dump(); return true;});
+		resetButton.addEventHandler(&reset);
 
 		auto disassembleButton = context.getWidgetById("disasm");
 		disassembleButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){disassembleMemory(); return true;});
@@ -165,10 +156,21 @@ class EmulatorApplication : Application!GlfwWindow
 		}*/
 	}
 
+	bool reset(Widget widget, PointerClickEvent event)
+	{
+		em.reset();
+		attachDevices();
+		em.loadProgram(loadBinary(file));
+		printRegisters();
+		memoryList.listChangedSignal.emit();
+		return true;
+	}
+
 	void runPause()
 	{
-		dcpuRunning = !dcpuRunning;
-		if (dcpuRunning)
+		em.dcpu.isRunning = !em.dcpu.isRunning;
+
+		if (em.dcpu.isRunning)
 			runButton.setProperty!"text"("Pause");
 		else
 			runButton.setProperty!"text"("Run");
@@ -176,22 +178,17 @@ class EmulatorApplication : Application!GlfwWindow
 
 	void step()
 	{
-		if (dcpuRunning) return;
+		if (em.dcpu.isRunning) return;
 		em.step();
 		printRegisters();
 		memoryList.listChangedSignal.emit();
-	}
-
-	void dump()
-	{
-		printMem(0, 80, 8, em.dcpu);
 	}
 
 	override void update(double dt)
 	{
 		super.update(dt);
 
-		if (dcpuRunning)
+		if (em.dcpu.isRunning)
 		{
 			em.stepCycles(1666);
 			printRegisters();
@@ -210,22 +207,6 @@ class EmulatorApplication : Application!GlfwWindow
 		}
 	}
 
-	void printMem(ushort start, ushort end, ushort padding, ref Dcpu dcpu)
-	{
-		for(uint i = start; i < end; i += padding)
-		{
-			writef("%04x: ", i);
-			for(uint pad = 0; pad < padding; ++pad)
-			{
-				if (end <= i+pad)
-					writef("%04x ", 0);
-				else
-					writef("%04x ", dcpu.mem[i+pad]);
-			}
-			writeln;
-		}
-	}
-
 	void printRegisters()
 	{
 		with(em.dcpu)
@@ -233,7 +214,7 @@ class EmulatorApplication : Application!GlfwWindow
 			reg1["text"] = format("PC 0x%04x SP 0x%04x EX 0x%04x IA 0x%04x", reg_pc, reg_sp, reg_ex, reg_ia);
 		 	reg2["text"] = format(" A 0x%04x  B 0x%04x  C 0x%04x  X 0x%04x", reg[0], reg[1], reg[2], reg[3]);
 		 	reg3["text"] = format(" Y 0x%04x  Z 0x%04x  I 0x%04x  J 0x%04x", reg[4], reg[5], reg[6], reg[7]);
-		 	reg4["text"] = format("Ticks: %s", em.dcpu.cycles);
+		 	reg4["text"] = format("Ticks: %s Instructions: %s", em.dcpu.cycles, em.dcpu.instructions);
 		}
 	}
 

@@ -15,12 +15,12 @@ struct InterruptQueue
 	ubyte lastPos;
 	ubyte size;
 
-	@property ushort first()
+	@property ushort front()
 	{
 		return buffer[firstPos];
 	}
 
-	@property ushort last()
+	@property ushort back()
 	{
 		return buffer[lastPos];
 	}
@@ -30,7 +30,12 @@ struct InterruptQueue
 		return size >= 256;
 	}
 
-	void add(ushort element)
+	@property bool empty()
+	{
+		return size == 0;
+	}
+
+	void pushBack(ushort element)
 	{
 		buffer[++lastPos] = element;
 		++size;
@@ -39,7 +44,7 @@ struct InterruptQueue
 	/// Dequeue item from queue.
 	///
 	/// Size must be checked
-	ushort take()
+	ushort popFront()
 	in
 	{
 		assert(size > 0);
@@ -48,6 +53,26 @@ struct InterruptQueue
 	{
 		--size;
 		return buffer[firstPos++];
+	}
+
+	void pushFront(ushort element)
+	{
+		buffer[--firstPos] = element;
+		++size;
+	}
+
+	/// Dequeue item from queue.
+	///
+	/// Size must be checked
+	ushort popBack()
+	in
+	{
+		assert(size > 0);
+	}
+	body
+	{
+		--size;
+		return buffer[lastPos--];
 	}
 
 	void clear() nothrow

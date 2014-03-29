@@ -39,6 +39,7 @@ struct Dcpu
 	}
 
 	ulong cycles; /// cycles done by DCPU.
+	ulong instructions;
 
 	ushort[0x10000] mem;
 
@@ -51,6 +52,7 @@ struct Dcpu
 	IDevice[ushort] devices;
 
 	bool isBurning = false;
+	bool isRunning = false;
 
 	ushort numDevices() @property @trusted
 	{
