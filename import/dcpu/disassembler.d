@@ -8,12 +8,20 @@ module dcpu.disassembler;
 
 import std.string : format;
 
+enum indentStr = "    ";
 
-string[] disassemble(ushort[] memoryChunk)
+string[] disassembleSome(ushort[] memory, ushort location = 0, ushort count = 0)
 {
-	string[] lines;
+	ushort pointer = location;
+	ushort numInstructions = 0;
 
-	ushort pointer = 0;
+	string nextWord()
+	{
+		if (pointer >= memory.length)
+			return "???";
+		else
+			return format("%04x", memory[pointer++]);
+	}
 
 	string decodeOperand(bool isA)(ushort operand)
 	{
@@ -46,33 +54,68 @@ string[] disassemble(ushort[] memoryChunk)
 		}
 	}
 
-	string nextWord()
-	{
-		if (pointer >= memoryChunk.length)
-			return "???";
-		else
-			return format("%04x", memoryChunk[pointer++]);
-	}
+	string[] lines;
+	ushort prevInstr = 0;
+	string indent = "";
 
-	while(pointer < memoryChunk.length)
+	void processInstr()
 	{
 		string instrStr;
+
 		ushort address = pointer;
-		ushort instr = memoryChunk[pointer++];
+		ushort instr = memory[pointer++];
+
+		if (instr == 0)
+		{
+			prevInstr = 0;
+			indent = "";
+			return;
+		}
+
+		if (prevInstr >= 0x10 && prevInstr <= 0x17) indent ~= indentStr;
+
+
 		if ((instr & 0x1F) != 0)
 		{
 			string a = decodeOperand!true(instr >> 10);
 			string b = decodeOperand!false((instr >> 5) & 0x1F);
-			instrStr = format("%04x: ",address) ~ basicOpcodes[instr & 0x1F] ~ " " ~ b ~ ", " ~ a;
+			
+			instrStr = format("%04x: %s", address, indent) ~ basicOpcodes[instr & 0x1F] ~ " " ~ b ~ ", " ~ a;
+
+			prevInstr = instr & 0x1F;
 		}
 		else if (((instr >> 5) & 0x1F) != 0)
 		{
-			instrStr = format("%04x: ",address) ~ specialOpcodes[(instr >> 5) & 0x1F] ~ " " ~ decodeOperand!true(instr >> 10);
+			instrStr = format("%04x: %s", address, indent) ~ specialOpcodes[(instr >> 5) & 0x1F] ~ " " ~ decodeOperand!true(instr >> 10);
+			prevInstr = 0;
+			indent = "";
 		}
 		else
-			instrStr = format("%04x: ",address) ~ format("0x%02x 0x%02x, 0x%02x", instr & 0x1F, (instr >> 5) & 0x1F, instr >> 10);
+		{
+			instrStr = format("%04x: %s", address, indent) ~ format("0x%02x 0x%02x, 0x%02x", instr & 0x1F, (instr >> 5) & 0x1F, instr >> 10);
+			prevInstr = 0;
+			indent = "";
+		}
+
+		if (prevInstr < 0x10 || prevInstr > 0x17) indent = "";
 
 		lines ~= instrStr;
+		++numInstructions;
+	}
+
+	if (count > 0)
+	{
+		while(numInstructions < count && pointer < memory.length)
+		{
+			processInstr();
+		}
+	}
+	else
+	{
+		while(pointer < memory.length)
+		{
+			processInstr();
+		}
 	}
 
 	return lines;

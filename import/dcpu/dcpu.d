@@ -39,7 +39,7 @@ struct Dcpu
 	}
 
 	ulong cycles; /// cycles done by DCPU.
-	ulong instructions;
+	ulong instructions; /// instructions done by DCPU.
 
 	ushort[0x10000] mem;
 
@@ -72,6 +72,7 @@ void reset(ref Dcpu data)
 	data.reg[] = 0;
 
 	data.cycles = 0;
+	data.instructions = 0;
 
 	data.queueInterrupts = false;
 	data.intQueue.clear();

@@ -51,6 +51,7 @@ public:
 	{
 		ushort aRegister = _emulator.dcpu.reg[0]; // A register
 		ushort bRegister = _emulator.dcpu.reg[1]; // B register
+		//writefln("Clock: int a:%s b:%s", aRegister, bRegister);
 
 		switch(aRegister)
 		{
@@ -98,7 +99,7 @@ public:
 		ulong totalTicks = diff / tickPeriod;
 		if (totalTicks > ticks)
 		{
-			foreach(i; 0..totalTicks-ticks)
+			foreach(i; 0..totalTicks)
 			{
 				++ticks;
 				if (interruptMessage > 0)

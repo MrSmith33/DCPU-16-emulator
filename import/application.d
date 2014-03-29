@@ -149,11 +149,6 @@ class EmulatorApplication : Application!GlfwWindow
 		memoryView.setProperty!("sliderPos")(0.0);
 
 		writeln("\n----------------------------- Load end -----------------------------\n");
-
-		/*foreach(i, code; bareScancodes)
-		{
-			writefln("%03s %03s %s %03s %s", i, code, cast(char)code, shiftScancodes[i], cast(char)shiftScancodes[i]);
-		}*/
 	}
 
 	bool reset(Widget widget, PointerClickEvent event)
@@ -201,7 +196,7 @@ class EmulatorApplication : Application!GlfwWindow
 
 	void disassembleMemory()
 	{
-		foreach(line; disassemble(em.dcpu.mem[0..80]))
+		foreach(line; disassembleSome(em.dcpu.mem, 0, 100))
 		{
 			writeln(line);
 		}

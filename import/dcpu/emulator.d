@@ -7,10 +7,10 @@ Authors: Andrey Penechko.
 
 module dcpu.emulator;
 
-import dcpu.dcpu;
 import std.conv : to;
 import std.stdio;
 
+import dcpu.dcpu;
 import dcpu.devices.idevice;
 
 //@safe nothrow:
@@ -67,6 +67,7 @@ public class Emulator
 	ulong stepCycles(ulong cyclesToStep)
 	{
 		ulong initialCycles = dcpu.cycles;
+
 		while(dcpu.cycles - initialCycles < cyclesToStep)
 		{
 			step();
@@ -79,7 +80,9 @@ public class Emulator
 	void stepInstructions(ulong instructionsToStep)
 	{
 		foreach(_; 0..instructionsToStep)
+		{
 			step();
+		}
 	}
 
 	/// Adds interrupt with message 'message' to dcpu.intQueue or starts burning DCPU if queue grows bigger than 256
@@ -127,11 +130,11 @@ private:
 			case MUL: result = b * a; reg_ex = result >> 16; break;
 			case MLI: result = cast(short)a * cast(short)b; reg_ex = result >> 16; break;
 			case DIV: if (a==0){reg_ex = 0; result = 0;}
-						else {result = b/a; reg_ex = ((b << 16)/a) & 0xffff;} break; // TODO:test
+						else {result = b/a; reg_ex = ((b << 16)/a) & 0xFFFF;} break; // TODO:test
 			case DVI: if (a==0){reg_ex = 0; result = 0;}
 						else {
 							result = cast(short)b/cast(short)a;
-							reg_ex = ((cast(short)b << 16)/cast(short)a) & 0xffff;
+							reg_ex = ((cast(short)b << 16)/cast(short)a) & 0xFFFF;
 						} break; // TODO:test
 			case MOD: result = a == 0 ? 0 : b % a; break;
 			case MDI: result = a == 0 ? 0 : cast(short)b % cast(short)a; break;
@@ -188,7 +191,7 @@ private:
 						reg_pc = pop();
 						break;
 			case IAQ: queueInterrupts = *a > 0; break;
-			case HWN: *a = numDevices; writefln("numDevices %s", numDevices);break;
+			case HWN: *a = numDevices; writefln("HWN %s pc:%04X", numDevices, reg_pc);break;
 			case HWQ: queryHardwareInfo(*a); break;
 			case HWI: sendHardwareInterrupt(*a); break;
 			default : ;//writeln("Unknown instruction " ~ to!string(opcode));
@@ -261,7 +264,7 @@ private:
 	+/
 	void skipIfs()
 	{
-		while ((dcpu.mem[dcpu.reg_pc] & 0x1f) >= IFB && (dcpu.mem[dcpu.reg_pc] & 0x1f) <= IFU)
+		while ((dcpu.mem[dcpu.reg_pc] & 0x1F) >= IFB && (dcpu.mem[dcpu.reg_pc] & 0x1F) <= IFU)
 		{
 			skip();
 		}
@@ -273,43 +276,46 @@ private:
 	{
 		ulong cycles = dcpu.cycles;
 		ushort instr = dcpu.mem[dcpu.reg_pc++];
-		ushort opcode = instr & 0x1f;
+		ushort opcode = instr & 0x1F;
 
 		if (opcode != 0) //basic
 		{
-			getOperand!true(instr >> 10);
-			getOperand!false((instr >> 5) & 0x1F);
+			if (nextWordOperands[instr >> 10]) ++dcpu.reg_pc;
+			if (nextWordOperands[(instr >> 5) & 0x1F]) ++dcpu.reg_pc;
 		}
 		else //special
 		{
-			getOperand!true(instr >> 10);
-		}			
+			if (nextWordOperands[instr >> 10]) ++dcpu.reg_pc;
+		}
 
 		dcpu.cycles = cycles + 1;
 	}
 
 	/// Extracts operand from an instruction
-	ushort* getOperand(bool isA)(ushort instr)
+	ushort* getOperand(bool isA)(ushort operandBits)
 	in
 	{
-		assert(instr <= 0x3f, "operand must be lower than 0x40");
+		assert(operandBits <= 0x3F, "operand must be lower than 0x40");
 		static if (!isA)
-			assert(instr <= 0x1f);
+			assert(operandBits <= 0x1F);
 	}
 	body
 	{
-		with(dcpu) switch(instr)
+		with(dcpu) switch(operandBits)
 		{
 			case 0x00: .. case 0x07: // register
-				return &reg[instr];
-			case 0x08: .. case 0x0f: // [register]
-				return &mem[reg[instr & 7]];
+				return &reg[operandBits];
+			case 0x08: .. case 0x0F: // [register]
+				return &mem[reg[operandBits & 7]];
 			case 0x10: .. case 0x17: // [register + next word]
 				++dcpu.cycles;
-				return &mem[(reg[instr & 7] + mem[reg_pc++]) & 0xffff];
+				return &mem[(reg[operandBits & 7] + mem[reg_pc++]) & 0xFFFF];
 			case 0x18: // PUSH / POP
 				static if (isA)
+				{
+					//writefln("PUSH / POP operandBits %04X at pc:%04X", operandBits, reg_pc);
 					return &mem[reg_sp++];
+				}
 				else
 					return &mem[--reg_sp];
 			case 0x19: // [SP] / PEEK
@@ -330,7 +336,7 @@ private:
 				++dcpu.cycles;
 				return &mem[reg_pc++];
 			default: // 0xffff-0x1e (-1..30) (literal) (only for a)
-				return &literals[instr & 0x1F];
+				return &literals[operandBits & 0x1F];
 		}
 	}
 }
@@ -341,6 +347,12 @@ private static ushort[0x20] literals =
 	 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E,
 	 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
 	 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E];
+
+/// Operands which will read nex word increasing pc register are '1', other are '0'.
+private static immutable ushort[64] nextWordOperands =
+	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+	 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ];
 
 /// Table of basic instructions cost.
 private static immutable ubyte[] basicCycles = 
@@ -354,5 +366,5 @@ private static immutable ubyte[] specialCycles =
 
 // Enums for opcodes. Just a bit of self documented code.
 private enum {SET = 0x01, ADD, SUB, MUL, MLI, DIV, DVI, MOD, MDI, AND, BOR, XOR, SHR, ASR,
-			SHL, IFB, IFC, IFE, IFN, IFG, IFA, IFL, IFU, ADX = 0x1a, SBX, STI = 0x1e, STD}
+			SHL, IFB, IFC, IFE, IFN, IFG, IFA, IFL, IFU, ADX = 0x1A, SBX, STI = 0x1E, STD}
 private enum {JSR = 0x01, INT = 0x08, IAG, IAS, RFI, IAQ, HWN = 0x10, HWQ, HWI}
