@@ -12,7 +12,7 @@ enum indentStr = "    ";
 
 string[] disassembleSome(ushort[] memory, ushort location = 0, ushort count = 0)
 {
-	ushort pointer = location;
+	uint pointer = location;
 	ushort numInstructions = 0;
 
 	string nextWord()
@@ -62,7 +62,7 @@ string[] disassembleSome(ushort[] memory, ushort location = 0, ushort count = 0)
 	{
 		string instrStr;
 
-		ushort address = pointer;
+		uint address = pointer;
 		ushort instr = memory[pointer++];
 
 		if (instr == 0)

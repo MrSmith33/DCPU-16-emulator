@@ -18,6 +18,8 @@ import dcpu.updatequeue;
 /// DCPU-16 memory and registers storage.
 struct Dcpu
 {
+	enum clockSpeed = 100_000; //Hz
+
 	union
 	{
 		ushort[12]	reg;

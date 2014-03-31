@@ -159,8 +159,8 @@ private:
 						if (ushort over = result >> 16)
 							reg_ex = over == 0xFFFF ? 0xFFFF : 0x0001;
 						break;
-			case STI: result = a; ++reg_i; ++reg_j; break;
-			case STD: result = a; --reg_i; --reg_j; break;
+			case STI: *destination = a; ++reg_i; ++reg_j; return;
+			case STD: *destination = a; --reg_i; --reg_j; return;
 			default: ;//writeln("Unknown instruction " ~ to!string(opcode)); //Invalid opcode
 		}
 
@@ -198,16 +198,16 @@ private:
 		}
 	}
 
-	/// Pushes value onto stack increasing reg_sp.
+	/// Pushes value onto stack decreasing reg_sp.
 	void push(ushort value)
 	{
 		dcpu.mem[--dcpu.reg_sp] = value;
 	}
 
-	/// Pops value from stack decreasing reg_sp.
+	/// Pops value from stack increasing reg_sp.
 	ushort pop()
 	{
-		return dcpu.mem[++dcpu.reg_sp];
+		return dcpu.mem[dcpu.reg_sp++];
 	}
 
 	/// Sets A, B, C, X, Y registers to information about hardware deviceIndex

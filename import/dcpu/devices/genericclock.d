@@ -99,7 +99,7 @@ public:
 		ulong totalTicks = diff / tickPeriod;
 		if (totalTicks > ticks)
 		{
-			foreach(i; 0..totalTicks)
+			foreach(i; 0..totalTicks-ticks)
 			{
 				++ticks;
 				if (interruptMessage > 0)
