@@ -29,6 +29,7 @@ import memoryview;
 import dcpu.devices.lem1802;
 import dcpu.devices.genericclock;
 import dcpu.devices.generickeyboard;
+import dcpu.devices.floppydrive;
 
 class EmulatorApplication : Application!GlfwWindow
 {
@@ -41,6 +42,7 @@ class EmulatorApplication : Application!GlfwWindow
 	Lem1802 monitor;
 	GenericClock clock;
 	GenericKeyboard keyboard;
+	FloppyDrive floppyDrive;
 	Widget reg1, reg2, reg3, reg4;
 	MemoryView memoryList;
 
@@ -73,6 +75,7 @@ class EmulatorApplication : Application!GlfwWindow
 		em.attachDevice(monitor);
 		em.attachDevice(keyboard);
 		em.attachDevice(clock);
+		em.attachDevice(floppyDrive);
 	}
 
 	override void load(in string[] args)
@@ -89,6 +92,8 @@ class EmulatorApplication : Application!GlfwWindow
 		monitor = new Lem1802;
 		clock = new GenericClock;
 		keyboard = new GenericKeyboard;
+		floppyDrive = new FloppyDrive;
+		floppyDrive.floppy = new Floppy;
 		attachDevices();
 		
 		em.loadProgram(loadBinary(file));
@@ -196,7 +201,7 @@ class EmulatorApplication : Application!GlfwWindow
 
 	void disassembleMemory()
 	{
-		foreach(line; disassembleSome(em.dcpu.mem, 0, 100))
+		foreach(line; disassembleSome(em.dcpu.mem, 0, 0))
 		{
 			writeln(line);
 		}
