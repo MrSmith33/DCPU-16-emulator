@@ -322,7 +322,7 @@ private:
 				return &mem[reg_sp];
 			case 0x1a: // [SP + next word]
 				++dcpu.cycles;
-				return &mem[cast(ushort)(reg_sp + reg_pc++)];
+				return &mem[cast(ushort)(reg_sp + mem[reg_pc++])];
 			case 0x1b: // SP
 				return &reg_sp;
 			case 0x1c: // PC
