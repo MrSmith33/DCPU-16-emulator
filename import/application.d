@@ -108,7 +108,6 @@ class EmulatorApplication : Application!GlfwWindow
 		auto texture = new Texture(monitor.bitmap, TextureTarget.target2d, TextureFormat.rgba);
 		monitorWidget.setProperty!("texture")(texture);
 		monitorWidget.addEventHandler(delegate bool(Widget widget, KeyPressEvent event){
-			writeln("KeyPressEvent");
 			keyboard.onKey(cast(KeyCode)event.keyCode, event.modifiers, true);
 			return true;
 		});

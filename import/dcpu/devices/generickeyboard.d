@@ -59,6 +59,7 @@ public:
 			case 0:
 				buffer.length = 0;
 				return 0;
+
 			case 1:
 				if (buffer.length > 0)
 				{
@@ -69,18 +70,21 @@ public:
 				{
 					_emulator.dcpu.reg[2] = 0;
 				}
-				if (_emulator.dcpu.reg[2])writeln("next key ", _emulator.dcpu.reg[2]);
+				//if (_emulator.dcpu.reg[2])writeln("next key ", _emulator.dcpu.reg[2]);
 				return 0;
+
 			case 2:
 				if (bRegister <= 0x91)
 					_emulator.dcpu.reg[2] = pressedKeys[bRegister];
 				else
 					_emulator.dcpu.reg[2] = 0;
-				if (_emulator.dcpu.reg[2])writeln("is key pressed ", _emulator.dcpu.reg[2]);
+				//if (_emulator.dcpu.reg[2]) writeln("is key pressed ", _emulator.dcpu.reg[2]);
 				return 0;
+
 			case 3:
 				interruptMessage = bRegister;
 				return 0;
+
 			default:
 				break;
 		}
@@ -88,7 +92,7 @@ public:
 		return 0;
 	}
 
-	void onKey(KeyCode keyCode, KeyModifiers modifiers, bool pressed)
+	void onKey(KeyCode keyCode, uint modifiers, bool pressed)
 	{
 		//if (interruptMessage == 0) return;
 
@@ -97,29 +101,26 @@ public:
 		if (keyCode <= 348)
 		{
 			
-			//if (modifiers & KeyModifiers.SHIFT)
-			//{
-			////	writefln("with shift %b", modifiers);
-			//	code = shiftScancodes[keyCode];
-			//}
-			//else
-			//{
+			if (modifiers & KeyModifiers.SHIFT)
+			{
+				//writefln("with shift %08b", modifiers);
+				code = shiftScancodes[keyCode];
+			}
+			else
+			{
 				//writefln("without shift");
 				code = bareScancodes[keyCode];
-			//}
+			}
 		}
 
 		if (code != 0)
 		{
-			
-			//writefln("key %s %s %s", code, cast(char)code, pressed ? "pressed" : "released");
-
 			if (code >= 0x09 && code <= 0x91)
 			{
 				if (pressed)
 				{
 					buffer ~= code;
-					//pressedKeys[code] = true;
+					pressedKeys[code] = true;
 				}
 				else
 				{
@@ -128,9 +129,9 @@ public:
 						buffer ~= code;
 					}*/
 					
-					//pressedKeys[code] = false;
+					pressedKeys[code] = false;
 				}
-				writefln("%s %s", code, pressedKeys[code]);
+				//writefln("%s %s", code, pressedKeys[code]);
 			}
 
 			if (!triggeredInterrupt && interruptMessage > 0)
@@ -209,8 +210,8 @@ static immutable ushort[] bareScancodes = [
 // When shift key IS pressed. From 0 to 348
 static immutable ushort[] shiftScancodes = [
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 32, 0, 0, 0, 0, 0, 0, 34, 0, 0, 0, 0, 60, 95, 62, 63, 33, 64, 35,
-36, 37, 94, 38, 42, 40, 41, 0, 58, 0, 43, 0, 0, 0, 65, 66, 67, 68, 69, 70, 71,
+0, 0, 0, 0, 0, 32, 0, 0, 0, 0, 0, 0, 34, 0, 0, 0, 0, 60, 95, 62, 63, 41, 33, 64, 35,
+36, 37, 94, 38, 42, 40, 0, 58, 0, 43, 0, 0, 0, 65, 66, 67, 68, 69, 70, 71,
 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 123,
 124, 125, 0, 0, 126, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
