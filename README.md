@@ -1,5 +1,8 @@
 DCPU-16 emulator
 ================
+
+![screen1](https://cloud.githubusercontent.com/assets/1129910/2623807/0780eb22-bd09-11e3-85e7-5c52e7fe4686.png)
+
 **Alpha stage**
 ----------------
 
