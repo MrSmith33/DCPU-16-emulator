@@ -165,6 +165,8 @@ public:
 
 			delay = 0;
 		}
+
+		setStateError(_floppy.isWriteProtected ? StateCode.readyWp : StateCode.ready, ErrorCode.none);
 	}
 
 	/// Returns: 32 bit word identifying the hardware id.

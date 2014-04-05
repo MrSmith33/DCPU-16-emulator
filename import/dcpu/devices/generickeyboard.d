@@ -51,8 +51,8 @@ public:
 
 	override uint handleInterrupt()
 	{
-		ushort aRegister = _emulator.dcpu.reg[0]; // A register
-		ushort bRegister = _emulator.dcpu.reg[1]; // B register
+		ushort aRegister = _emulator.dcpu.reg_a; // A register
+		ushort bRegister = _emulator.dcpu.reg_b; // B register
 
 		switch(aRegister)
 		{
@@ -63,22 +63,22 @@ public:
 			case 1:
 				if (buffer.length > 0)
 				{
-					_emulator.dcpu.reg[2] = buffer.front;
+					_emulator.dcpu.reg_c = buffer.front;
 					buffer.popFront;
 				}
 				else
 				{
-					_emulator.dcpu.reg[2] = 0;
+					_emulator.dcpu.reg_c = 0;
 				}
 				//if (_emulator.dcpu.reg[2])writeln("next key ", _emulator.dcpu.reg[2]);
 				return 0;
 
 			case 2:
 				if (bRegister <= 0x91)
-					_emulator.dcpu.reg[2] = pressedKeys[bRegister];
+					_emulator.dcpu.reg_c = pressedKeys[bRegister];
 				else
-					_emulator.dcpu.reg[2] = 0;
-				//if (_emulator.dcpu.reg[2]) writeln("is key pressed ", _emulator.dcpu.reg[2]);
+					_emulator.dcpu.reg_c = 0;
+				writeln("is key pressed ", _emulator.dcpu.reg_c);
 				return 0;
 
 			case 3:
