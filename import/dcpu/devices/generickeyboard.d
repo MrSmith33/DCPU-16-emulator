@@ -25,10 +25,10 @@ import dcpu.dcpu;
  + See 'docs/generic keyboard.txt' for specification.
  +/
 
-class GenericKeyboard : IDevice
+class GenericKeyboard(Cpu) : IDevice!Cpu
 {
 protected:
-	Emulator _emulator;
+	Emulator!Cpu _emulator;
 	ushort interruptMessage;
 	ushort[] buffer;
 	BitArray pressedKeys;
@@ -43,7 +43,7 @@ public:
 		pressedKeys.length = 0x91 + 1; // control + 1. total keys
 	}
 
-	override void attachEmulator(Emulator emulator)
+	override void attachEmulator(Emulator!Cpu emulator)
 	{
 		_emulator = emulator;
 		reset();
@@ -51,8 +51,8 @@ public:
 
 	override uint handleInterrupt()
 	{
-		ushort aRegister = _emulator.dcpu.reg_a; // A register
-		ushort bRegister = _emulator.dcpu.reg_b; // B register
+		ushort aRegister = _emulator.dcpu.regs.a; // A register
+		ushort bRegister = _emulator.dcpu.regs.b; // B register
 
 		switch(aRegister)
 		{
@@ -63,22 +63,22 @@ public:
 			case 1:
 				if (buffer.length > 0)
 				{
-					_emulator.dcpu.reg_c = buffer.front;
+					_emulator.dcpu.regs.c = buffer.front;
 					buffer.popFront;
 				}
 				else
 				{
-					_emulator.dcpu.reg_c = 0;
+					_emulator.dcpu.regs.c = 0;
 				}
 				//if (_emulator.dcpu.reg[2])writeln("next key ", _emulator.dcpu.reg[2]);
 				return 0;
 
 			case 2:
 				if (bRegister <= 0x91)
-					_emulator.dcpu.reg_c = pressedKeys[bRegister];
+					_emulator.dcpu.regs.c = pressedKeys[bRegister];
 				else
-					_emulator.dcpu.reg_c = 0;
-				writeln("is key pressed ", _emulator.dcpu.reg_c);
+					_emulator.dcpu.regs.c = 0;
+				//writeln("is key pressed ", _emulator.dcpu.reg_c);
 				return 0;
 
 			case 3:
@@ -136,7 +136,7 @@ public:
 
 			if (!triggeredInterrupt && interruptMessage > 0)
 			{
-				_emulator.triggerInterrupt(interruptMessage);
+				triggerInterrupt(_emulator.dcpu, interruptMessage);
 				triggeredInterrupt = true;
 			}
 		}
@@ -174,6 +174,26 @@ public:
 	override uint manufacturer() @property
 	{
 		return 0;
+	}
+
+	override void commitFrame(ulong frameNumber)
+	{
+
+	}
+
+	override void discardFrame()
+	{
+
+	}
+
+	override void undoFrames(ulong numFrames)
+	{
+
+	}
+
+	override void discardUndoStack()
+	{
+		
 	}
 
 protected:

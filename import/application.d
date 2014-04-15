@@ -8,7 +8,7 @@ module application;
 
 import std.stdio : writeln;
 import std.string : format;
-import std.file : read, write;
+import std.file : read, write, exists;
 
 import anchovy.core.input;
 
@@ -38,13 +38,13 @@ class EmulatorApplication : Application!GlfwWindow
 		super(windowSize, caption);
 	}
 
-	Emulator em;
-	Lem1802 monitor;
-	GenericClock clock;
-	GenericKeyboard keyboard;
-	FloppyDrive floppyDrive;
+	Emulator!DebugDcpu emulator;
+	Lem1802!DebugDcpu monitor;
+	GenericClock!DebugDcpu clock;
+	GenericKeyboard!DebugDcpu keyboard;
+	FloppyDrive!DebugDcpu floppyDrive;
 	Widget reg1, reg2, reg3, reg4;
-	MemoryView memoryList;
+	MemoryView!DebugDcpu memoryList;
 
 	bool dcpuRunning = false;
 	Widget runButton;
@@ -64,6 +64,7 @@ class EmulatorApplication : Application!GlfwWindow
 
 	ushort[] loadBinary(string filename)
 	{
+		if (!exists(filename)) return [];
 		ubyte[] binary = cast(ubyte[])read(filename);
 		assert(binary.length % 2 == 0);
 		return cast(ushort[])binary;
@@ -71,11 +72,11 @@ class EmulatorApplication : Application!GlfwWindow
 
 	void attachDevices()
 	{
-		em.dcpu.updateQueue = new UpdateQueue;
-		em.attachDevice(monitor);
-		em.attachDevice(keyboard);
-		em.attachDevice(clock);
-		em.attachDevice(floppyDrive);
+		emulator.dcpu.updateQueue = new UpdateQueue!DebugDcpu;
+		emulator.attachDevice(monitor);
+		emulator.attachDevice(keyboard);
+		emulator.attachDevice(clock);
+		emulator.attachDevice(floppyDrive);
 	}
 
 	override void load(in string[] args)
@@ -88,15 +89,15 @@ class EmulatorApplication : Application!GlfwWindow
 
 		fpsHelper.limitFps = true;
 
-		em = new Emulator();
-		monitor = new Lem1802;
-		clock = new GenericClock;
-		keyboard = new GenericKeyboard;
-		floppyDrive = new FloppyDrive;
+		emulator = new Emulator!DebugDcpu();
+		monitor = new Lem1802!DebugDcpu;
+		clock = new GenericClock!DebugDcpu;
+		keyboard = new GenericKeyboard!DebugDcpu;
+		floppyDrive = new FloppyDrive!DebugDcpu;
 		floppyDrive.floppy = new Floppy;
 		attachDevices();
 		
-		em.loadProgram(loadBinary(file));
+		emulator.loadProgram(loadBinary(file));
 
 		// ----------------------------- Creating widgets -----------------------------
 		templateManager.parseFile("dcpu.sdl");
@@ -124,9 +125,9 @@ class EmulatorApplication : Application!GlfwWindow
 		stepButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){step(); return true;});
 
 		auto stepButton10 = context.getWidgetById("step10");
-		stepButton10.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){em.stepInstructions(10); printRegisters(); return true;});
+		stepButton10.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){emulator.stepInstructions(10); printRegisters(); return true;});
 		auto stepButton100 = context.getWidgetById("step100");
-		stepButton100.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){em.stepInstructions(100); printRegisters(); return true;});
+		stepButton100.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){emulator.stepInstructions(100); printRegisters(); return true;});
 		
 
 		runButton = context.getWidgetById("run");
@@ -147,7 +148,7 @@ class EmulatorApplication : Application!GlfwWindow
 		reg4 = context.getWidgetById("reg4");
 		printRegisters();
 
-		memoryList = new MemoryView(&em.dcpu);
+		memoryList = new MemoryView!DebugDcpu(&emulator.dcpu);
 		auto memoryView = context.getWidgetById("memoryview");
 		memoryView.setProperty!("list", List!dstring)(memoryList);
 		memoryView.setProperty!("sliderPos")(0.0);
@@ -157,9 +158,9 @@ class EmulatorApplication : Application!GlfwWindow
 
 	bool reset(Widget widget, PointerClickEvent event)
 	{
-		em.reset();
+		emulator.dcpu.reset();
 		attachDevices();
-		em.loadProgram(loadBinary(file));
+		emulator.loadProgram(loadBinary(file));
 		printRegisters();
 		memoryList.listChangedSignal.emit();
 		return true;
@@ -167,9 +168,9 @@ class EmulatorApplication : Application!GlfwWindow
 
 	void runPause()
 	{
-		em.dcpu.isRunning = !em.dcpu.isRunning;
+		emulator.dcpu.isRunning = !emulator.dcpu.isRunning;
 
-		if (em.dcpu.isRunning)
+		if (emulator.dcpu.isRunning)
 			runButton.setProperty!"text"("Pause");
 		else
 			runButton.setProperty!"text"("Run");
@@ -177,8 +178,8 @@ class EmulatorApplication : Application!GlfwWindow
 
 	void step()
 	{
-		if (em.dcpu.isRunning) return;
-		em.step();
+		if (emulator.dcpu.isRunning) return;
+		emulator.step();
 		printRegisters();
 		memoryList.listChangedSignal.emit();
 	}
@@ -187,9 +188,9 @@ class EmulatorApplication : Application!GlfwWindow
 	{
 		super.update(dt);
 
-		if (em.dcpu.isRunning)
+		if (emulator.dcpu.isRunning)
 		{
-			em.stepCycles(1666);
+			emulator.stepCycles(1666);
 			printRegisters();
 			memoryList.listChangedSignal.emit();
 		}
@@ -200,7 +201,7 @@ class EmulatorApplication : Application!GlfwWindow
 
 	void disassembleMemory()
 	{
-		foreach(line; disassembleSome(em.dcpu.mem, 0, 0))
+		foreach(line; disassembleSome(emulator.dcpu.mem.memory, 0, 0))
 		{
 			writeln(line);
 		}
@@ -208,12 +209,12 @@ class EmulatorApplication : Application!GlfwWindow
 
 	void printRegisters()
 	{
-		with(em.dcpu)
+		with(emulator.dcpu)
 		{
-			reg1["text"] = format("PC 0x%04x SP 0x%04x EX 0x%04x IA 0x%04x", reg_pc, reg_sp, reg_ex, reg_ia);
-		 	reg2["text"] = format(" A 0x%04x  B 0x%04x  C 0x%04x  X 0x%04x", reg[0], reg[1], reg[2], reg[3]);
-		 	reg3["text"] = format(" Y 0x%04x  Z 0x%04x  I 0x%04x  J 0x%04x", reg[4], reg[5], reg[6], reg[7]);
-		 	reg4["text"] = format("Ticks: %s Instructions: %s", em.dcpu.cycles, em.dcpu.instructions);
+			reg1["text"] = format("PC 0x%04x SP 0x%04x EX 0x%04x IA 0x%04x", regs.pc, regs.sp, regs.ex, regs.ia);
+		 	reg2["text"] = format(" A 0x%04x  B 0x%04x  C 0x%04x  X 0x%04x", regs.a, regs.b, regs.c, regs.x);
+		 	reg3["text"] = format(" Y 0x%04x  Z 0x%04x  I 0x%04x  J 0x%04x", regs.y, regs.z, regs.i, regs.j);
+		 	reg4["text"] = format("Ticks: %s Instructions: %s", emulator.dcpu.regs.cycles, emulator.dcpu.regs.instructions);
 		}
 	}
 

@@ -11,18 +11,18 @@ import std.stdio;
 
 import dcpu.devices.idevice;
 
-struct UpdateQuery
+struct UpdateQuery(Cpu)
 {
-	IDevice device;
+	IDevice!Cpu device;
 	ulong delay;
 	size_t message;
 }
 
-struct UpdateQueue
+struct UpdateQueue(Cpu)
 {
 	ulong ticksAccumulated;
 	bool empty = true;
-	UpdateQuery*[] queries;
+	UpdateQuery!Cpu*[] queries;
 
 	void onTick(ulong ticksElapsed)
 	{
@@ -51,7 +51,7 @@ struct UpdateQueue
 
 			//writefln("queries %s", queries);
 
-			UpdateQuery*[] tempQueries = queries;
+			UpdateQuery!Cpu*[] tempQueries = queries;
 			queries.length = 0;
 
 			foreach(ref query; tempQueries.filter!((a) => a !is null))
@@ -80,12 +80,12 @@ struct UpdateQueue
 	}
 
 	/// Adds update query
-	void addQuery(IDevice device, ulong delay, size_t message = 0)
+	void addQuery(IDevice!Cpu device, ulong delay, size_t message = 0)
 	{
 		//writefln("begin add %s, %s", device, queries);
 		ulong realDelay = delay + ticksAccumulated;
 
-		queries ~= new UpdateQuery(device, realDelay, message);
+		queries ~= new UpdateQuery!Cpu(device, realDelay, message);
 
 		foreach(i, query; queries)
 		{
@@ -106,10 +106,10 @@ struct UpdateQueue
 	}
 
 	/// Removes all occurences of device in queries in place.
-	void removeQueries(IDevice device)
+	void removeQueries(IDevice!Cpu device)
 	{
 		//writefln("begin remove %s, %s", device, queries);
-		UpdateQuery*[] tempQueries = queries;
+		UpdateQuery!Cpu*[] tempQueries = queries;
 		queries.length = 0;
 
 		foreach(ref query; tempQueries.filter!((a) => (*a).device != device))

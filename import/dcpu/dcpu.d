@@ -12,46 +12,57 @@ import std.algorithm : fill;
 import dcpu.devices.idevice;
 import dcpu.interruptqueue;
 import dcpu.updatequeue;
+import dcpu.deviceproxy;
 
-@safe nothrow:
+@safe:
 
-/// DCPU-16 memory and registers storage.
-struct Dcpu
+struct DcpuRegisters
 {
-	enum clockSpeed = 100_000; //Hz
-
 	union
 	{
-		ushort[12]	reg;
+		ushort[12] array;
 		struct
 		{
-			ushort reg_a;  //0
-			ushort reg_b;  //1
-			ushort reg_c;  //2
-			ushort reg_x;  //3
-			ushort reg_y;  //4
-			ushort reg_z;  //5
-			ushort reg_i;  //6
-			ushort reg_j;  //7
-			ushort reg_sp; //8
-			ushort reg_pc; //9
-			ushort reg_ex; //10
-			ushort reg_ia; //11
+			ushort a;  //0
+			ushort b;  //1
+			ushort c;  //2
+			ushort x;  //3
+			ushort y;  //4
+			ushort z;  //5
+			ushort i;  //6
+			ushort j;  //7
+			ushort sp; //8
+			ushort pc; //9
+			ushort ex; //10
+			ushort ia; //11
 		}
 	}
 
 	ulong cycles; /// cycles done by DCPU.
 	ulong instructions; /// instructions done by DCPU.
 
-	ushort[0x10000] mem;
-
 	bool queueInterrupts = false;
-	InterruptQueue intQueue;
+}
 
-	UpdateQueue* updateQueue;
-	
+struct DcpuMemory
+{
+	ushort[0x10000] mem;
+}
+
+struct DebugDcpu
+{
+	//alias Cpu = typeof(this);
+
+	auto regs = ObservableRegisters!(DcpuRegisters, 2)(0);
+
+	auto mem = ObservableMemory!(ushort[0x10000], 2)(0);
+
+	uint clockSpeed = 100_000; //Hz
+
+	InterruptQueue intQueue;
+	UpdateQueue!DebugDcpu* updateQueue;
+	IDevice!DebugDcpu[ushort] devices;
 	private ushort nextHardwareId = 0;
-	IDevice[ushort] devices;
 
 	bool isBurning = false;
 	bool isRunning = false;
@@ -61,7 +72,40 @@ struct Dcpu
 		return cast(ushort)devices.length;
 	}
 
-	ushort attachDevice(IDevice device) // TODO: checks
+	ushort attachDevice(IDevice!DebugDcpu device) // TODO: checks
+	{
+		devices[nextHardwareId] = device;
+		return nextHardwareId++;
+	}
+}
+
+/*/// DCPU-16 memory and registers storage.
+struct FastDcpu
+{
+	//alias Cpu = typeof(this);
+
+	uint clockSpeed = 100_000; //Hz
+
+	DcpuRegisters regs;
+
+	ushort[0x10000] mem;
+
+	InterruptQueue intQueue;
+
+	UpdateQueue!FastDcpu* updateQueue;
+	
+	private ushort nextHardwareId = 0;
+	IDevice!FastDcpu[ushort] devices;
+
+	bool isBurning = false;
+	bool isRunning = false;
+
+	ushort numDevices() @property @trusted
+	{
+		return cast(ushort)devices.length;
+	}
+
+	ushort attachDevice(IDevice!FastDcpu device) // TODO: checks
 	{
 		devices[nextHardwareId] = device;
 		return nextHardwareId++;
@@ -69,9 +113,9 @@ struct Dcpu
 }
 
 /// Resets dcpu to its initial state.
-void reset(ref Dcpu data)
+void reset(ref FastDcpu data)
 {
-	data.reg[] = 0;
+	data.array[] = 0;
 
 	data.cycles = 0;
 	data.instructions = 0;
@@ -86,4 +130,22 @@ void reset(ref Dcpu data)
 	data.isBurning = false;
 
 	fill!(ushort[], ushort)(data.mem, 0u);
+}*/
+
+void reset(ref DebugDcpu dcpu)
+{
+	dcpu.regs.observableArray[] = 0;
+	dcpu.regs.observer.discardUndoStack();
+	dcpu.regs.observer.discardFrame();
+
+	dcpu.intQueue.clear();
+
+	dcpu.devices = null;
+	dcpu.nextHardwareId = 0;
+
+	dcpu.isBurning = false;
+
+	dcpu.mem.observableArray[] = 0;
+	dcpu.mem.observer.discardUndoStack();
+	dcpu.mem.observer.discardFrame();
 }

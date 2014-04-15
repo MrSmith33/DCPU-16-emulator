@@ -23,11 +23,23 @@ import dcpu.dcpu;
  + See 'docs/LEM1802 monitor.txt' for specification.
  +/
 
-class Lem1802 : IDevice
+struct Lem1802Registers
+{
+	ushort fontAddress;
+	ushort videoAddress;
+	ushort paletteAddress;
+	ushort borderColor;
+
+	bool blinkPhase;
+	bool enabled = false; 
+	bool splash = false;
+}
+
+class Lem1802(Cpu) : IDevice!Cpu
 {
 protected:
-	Emulator _emulator;
-	Dcpu* _dcpu;
+	Emulator!Cpu _emulator;
+	Cpu* _dcpu;
 	Bitmap _bitmap;
 
 	ushort fontAddress;
@@ -40,7 +52,7 @@ protected:
 	bool splash = false;
 
 	uint blinkInterval = 70000;
-	uint splashDelay = 70000;
+	uint splashDelay = 1;
 
 	enum numRows = 12;
 	enum numCols = 32;
@@ -61,7 +73,7 @@ public:
 		return _bitmap;
 	}
 
-	override void attachEmulator(Emulator emulator)
+	override void attachEmulator(Emulator!Cpu emulator)
 	{
 		_emulator = emulator;
 		_dcpu = &emulator.dcpu;
@@ -79,8 +91,8 @@ public:
 	/// Handles hardware interrupt and returns a number of cycles.
 	override uint handleInterrupt()
 	{
-		ushort aRegister = _emulator.dcpu.reg[0]; // A register
-		ushort bRegister = _emulator.dcpu.reg[1]; // B register
+		ushort aRegister = _emulator.dcpu.regs.a;
+		ushort bRegister = _emulator.dcpu.regs.b;
 
 		switch(aRegister)
 		{
@@ -155,6 +167,26 @@ public:
 	override uint manufacturer() @property
 	{
 		return 0x1c6c8b36;
+	}
+
+	override void commitFrame(ulong frameNumber)
+	{
+
+	}
+
+	override void discardFrame()
+	{
+
+	}
+
+	override void undoFrames(ulong numFrames)
+	{
+
+	}
+
+	override void discardUndoStack()
+	{
+		
 	}
 
 protected:

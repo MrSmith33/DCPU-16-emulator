@@ -22,11 +22,11 @@ import dcpu.dcpu;
  + See 'docs/generic clock.txt' for specification.
  +/
 
-class GenericClock : IDevice
+class GenericClock(Cpu) : IDevice!Cpu
 {
 protected:
-	Dcpu* _dcpu;
-	Emulator _emulator;
+	Cpu* _dcpu;
+	Emulator!Cpu _emulator;
 	ulong initialCycles;
 	ushort ticks;
 	ushort divider;
@@ -35,7 +35,7 @@ protected:
 
 public:
 	/// Saves dcpu reference internally for future use.
-	override void attachEmulator(Emulator emulator)
+	override void attachEmulator(Emulator!Cpu emulator)
 	{
 		_emulator = emulator;
 		_dcpu = &emulator.dcpu;
@@ -49,8 +49,8 @@ public:
 	/// Handles hardware interrupt and returns a number of cycles.
 	override uint handleInterrupt()
 	{
-		ushort aRegister = _emulator.dcpu.reg[0]; // A register
-		ushort bRegister = _emulator.dcpu.reg[1]; // B register
+		ushort aRegister = _emulator.dcpu.regs.a;
+		ushort bRegister = _emulator.dcpu.regs.b;
 		//writefln("Clock: int a:%s b:%s", aRegister, bRegister);
 
 		switch(aRegister)
@@ -65,14 +65,14 @@ public:
 
 				if (divider != 0)
 				{
-					tickPeriod = cast(ulong)(100000.0 / (60.0 / divider));
+					tickPeriod = cast(ulong)(_dcpu.clockSpeed / (60.0 / divider));
 					_dcpu.updateQueue.addQuery(this, tickPeriod, 0);
 				}
 				ticks = 0;
-				initialCycles = _dcpu.cycles;
+				initialCycles = _dcpu.regs.cycles;
 				return 0;
 			case 1:
-				_dcpu.reg[2] = ticks;
+				_dcpu.regs.b = ticks;
 				return 0;
 			case 2:
 				interruptMessage = bRegister;
@@ -95,7 +95,7 @@ public:
 	/// If set to non-zero will be called after delay cycles elapsed with provided message.
 	override void handleUpdateQuery(ref size_t message, ref ulong delay)
 	{
-		ulong diff = _dcpu.cycles - initialCycles;
+		ulong diff = _dcpu.regs.cycles - initialCycles;
 		ulong totalTicks = diff / tickPeriod;
 		if (totalTicks > ticks)
 		{
@@ -104,7 +104,7 @@ public:
 				++ticks;
 				if (interruptMessage > 0)
 				{
-					_emulator.triggerInterrupt(interruptMessage);
+					triggerInterrupt(_emulator.dcpu, interruptMessage);
 				}
 			}
 		}
@@ -128,5 +128,25 @@ public:
 	override uint manufacturer() @property
 	{
 		return 0;
+	}
+
+	override void commitFrame(ulong frameNumber)
+	{
+		
+	}
+
+	override void discardFrame()
+	{
+
+	}
+
+	override void undoFrames(ulong numFrames)
+	{
+
+	}
+
+	override void discardUndoStack()
+	{
+		
 	}
 }

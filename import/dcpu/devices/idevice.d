@@ -7,16 +7,15 @@ Authors: Andrey Penechko.
 
 module dcpu.devices.idevice;
 
-import dcpu.dcpu;
+//import dcpu.dcpu;
 import dcpu.emulator;
 
 @trusted nothrow:
 
-abstract class IDevice
+abstract class IDevice(Cpu) : IUndoable
 {
-
 	/// Saves dcpu reference internally for future use.
-	void attachEmulator(Emulator emulator);
+	void attachEmulator(Emulator!Cpu emulator);
 
 	/// Handles hardware interrupt and returns a number of cycles.
 	uint handleInterrupt();
@@ -38,4 +37,17 @@ abstract class IDevice
 
 	/// Returns: 32 bit word identifying the manufacturer
 	uint manufacturer() @property;
+
+	abstract void commitFrame(ulong frameNumber);
+	abstract void discardFrame();
+	abstract void undoFrames(ulong numFrames);
+	abstract void discardUndoStack();
+}
+
+interface IUndoable
+{
+	void commitFrame(ulong frameNumber);
+	void discardFrame();
+	void undoFrames(ulong numFrames);
+	void discardUndoStack();
 }

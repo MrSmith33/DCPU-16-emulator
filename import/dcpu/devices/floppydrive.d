@@ -33,10 +33,10 @@ struct Floppy
 	bool isWriteProtected;
 }
 
-class FloppyDrive : IDevice
+class FloppyDrive(Cpu) : IDevice!Cpu
 {
 protected:
-	Emulator _emulator;
+	Emulator!Cpu _emulator;
 
 	Floppy* _floppy;
 
@@ -52,8 +52,10 @@ protected:
 	// reading if true, writing otherwise.
 	bool isReading;
 
-	enum seekingTime = 2.4 / 1000.0; // seconds per track.
-	enum sectorReadWriteSpeed = 512.0 / 30700.0; // seconds per sector.
+	//enum seekingTime = 2.4 / 1000.0; // seconds per track.
+	//enum sectorReadWriteSpeed = 512.0 / 30700.0; // seconds per sector.
+	enum seekingTime = 0;
+	enum sectorReadWriteSpeed = 0;
 	enum sectorSize = 512; // 512 words.
 	enum sectorsPerTrack = 18;
 
@@ -91,7 +93,7 @@ public:
 		return _floppy;
 	}
 
-	override void attachEmulator(Emulator emulator)
+	override void attachEmulator(Emulator!Cpu emulator)
 	{
 		_emulator = emulator;
 	}
@@ -99,20 +101,20 @@ public:
 	/// Handles hardware interrupt and returns a number of cycles.
 	override uint handleInterrupt()
 	{
-		ushort aRegister = _emulator.dcpu.reg_a; // A register
-		ushort bRegister = _emulator.dcpu.reg_b; // B register
+		ushort aRegister = _emulator.dcpu.regs.a; // A register
+		ushort bRegister = _emulator.dcpu.regs.b; // B register
 
 		switch(aRegister)
 		{
 			case 0: // Poll device
-				_emulator.dcpu.reg_b = _state;
-				_emulator.dcpu.reg_c = _error;
+				_emulator.dcpu.regs.b = _state;
+				_emulator.dcpu.regs.c = _error;
 				_error = ErrorCode.none;
 
 				return 0;
 
 			case 1: // Set interrupt message
-				interruptMessage = _emulator.dcpu.reg_x;
+				interruptMessage = _emulator.dcpu.regs.x;
 
 				return 0;
 
@@ -187,6 +189,26 @@ public:
 		return 0x1eb37e91;
 	}
 
+	override void commitFrame(ulong frameNumber)
+	{
+
+	}
+
+	override void discardFrame()
+	{
+
+	}
+
+	override void undoFrames(ulong numFrames)
+	{
+
+	}
+
+	override void discardUndoStack()
+	{
+		
+	}
+
 protected:
 
 	uint setupReadWrite(bool read)()
@@ -201,8 +223,8 @@ protected:
 		if (validState)
 		{
 			isReading = read;
-			targetSector = _emulator.dcpu.reg_x;
-			ramAddress = _emulator.dcpu.reg_y;
+			targetSector = _emulator.dcpu.regs.x;
+			ramAddress = _emulator.dcpu.regs.y;
 
 			uint distance = abs(targetSector/sectorsPerTrack - curentTrack);
 
@@ -210,13 +232,13 @@ protected:
 
 			_emulator.dcpu.updateQueue.addQuery(this, ticksToWait, 0);
 
-			_emulator.dcpu.reg_b = 1;
+			_emulator.dcpu.regs.b = 1;
 			setStateError(StateCode.busy);
 
 			return 0;
 		}
 		
-		_emulator.dcpu.reg_b = 0;
+		_emulator.dcpu.regs.b = 0;
 
 		if (_state == StateCode.readyWp)
 			setStateError(ErrorCode.floppyProtected);
@@ -251,7 +273,7 @@ protected:
 	{
 		if (interruptMessage)
 		{
-			_emulator.triggerInterrupt(interruptMessage);
+			triggerInterrupt(_emulator.dcpu, interruptMessage);
 		}
 	}
 }

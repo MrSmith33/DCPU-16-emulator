@@ -16,12 +16,12 @@ public import anchovy.gui.databinding.list;
 
 import dcpu.dcpu;
 
-class MemoryView : List!dstring
+class MemoryView(Cpu) : List!dstring
 {
-	Dcpu* dcpu;
+	Cpu* dcpu;
 	ushort itemsPerLine = 8;
 
-	this(Dcpu* dcpu)
+	this(Cpu* dcpu)
 	{
 		this.dcpu = dcpu;
 	}
