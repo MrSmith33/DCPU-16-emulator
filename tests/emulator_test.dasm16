@@ -1,6 +1,8 @@
 ;TESTING OPERATORS
+
 ;SET
 SET [results + 0], 0x1234 ;test SET assert(r0 == 0x1234)
+
 ;ADD
 ADD [results + 1], 15 ;test ADD without overflow assert(r1 == 15)
 SET [results + 2], EX ;save ex, assert(ex == 0)
@@ -8,6 +10,7 @@ SET [results + 2], EX ;save ex, assert(ex == 0)
 SET [results + 3], 0x1234
 ADD [results + 3], 0xFFFF ;test ADD with overflow assert(r3 == 1233 && ex == 1)
 SET [results + 4], EX ;save ex, assert(ex == 1)
+
 ;SUB
 SUB [results + 5], 0x1234 ;test SUB with underflow {0-0x1234}assert(r5 == 0xEDCC)
 SET [results + 6], EX ;save ex, assert(ex == 0xFFFF)
@@ -15,6 +18,7 @@ SET [results + 6], EX ;save ex, assert(ex == 0xFFFF)
 SET [results + 7], 0x1234
 SUB [results + 7], 0xDEA ;assert(r7 == 0x44A)
 SET [results + 8], EX ;save ex, assert(ex == 0x0000)
+
 ;MUL
 SET [results + 9], 0x1234
 MUL [results + 9], 2; assert(r9==0x2468)
@@ -23,10 +27,12 @@ SET [results + 10], EX ; ex==0x0
 SET [results + 11], 0xFFFF
 MUL [results + 11], 2; assert(r11==0xFFFE)
 SET [results + 12], EX ; ex==1
+
 ;MLI
 SET [results + 13], 0x1234
 MLI [results + 13], -2 ;assert(r13 == 0xdb98)
 SET [results + 14], EX ; assert(ex==0xFFFF)
+
 ;DIV
 SET [results + 15], 0x21 ; 33/2==16 rounding towards zero
 DIV [results + 15], 2 ; assert(r15==0x10)
@@ -35,12 +41,26 @@ SET [results + 16], EX ; assert(ex==0x8000)
 SET [results + 17], 0x1234 ; 0x1234/0==0,ex==0 division by zero
 DIV [results + 17], 0 ; assert(r17==0)
 SET [results + 18], EX ; assert(ex==0)
+
 ;DVI
 SET [results + 19], 0x21 ; 33/-2 == -16
 DVI [results + 19], 0xFFFE ; assert(r19==0xFFF0)
 SET [results + 20], EX ; assert(ex==0x8000)
+
 ;MOD
+SET [results + 21], 15 ; 15 mod 10 == 5
+MOD [results + 21], 10 ; 5
+
+SET [results + 22], 15 ; 15 mod 0 == 0
+MOD [results + 22], 0 ; 0
+
 ;MDI
+SET [results + 21], -7 ; -7 mdi 16 == -7
+MDI [results + 21], 16 ; -7
+
+SET [results + 22], -7 ; -7 mod 0 == 0
+MDI [results + 22], 0 ; 0
+
 ;AND
 ;BOR
 ;XOR
@@ -48,15 +68,89 @@ SET [results + 20], EX ; assert(ex==0x8000)
 ;ASR
 ;SHL
 ;IFB
+SET [results + 37], 1
+IFB [results + 37], 1
+	SET [results + 37], 0
+
 ;IFC
+SET [results + 38], 1
+IFC [results + 38], 2
+	SET [results + 38], 0
+
 ;IFE
+SET [results + 39], 1
+IFE [results + 39], 1
+	SET [results + 39], 0
+
 ;IFN
+SET [results + 40], 1
+IFN [results + 40], 2
+	SET [results + 40], 0
+
 ;IFG
+SET [results + 41], 1
+IFG [results + 41], 0
+	SET [results + 41], 0
+
 ;IFA
+SET [results + 42], -1
+IFA [results + 42], -2
+	SET [results + 42], 0
+
 ;IFL
+SET [results + 43], 1
+IFL [results + 43], 2
+	SET [results + 43], 0
+
 ;IFU
+SET [results + 44], -1
+IFU [results + 44], 0
+	SET [results + 44], 0
+
 ;ADX
+SET [results + 45], 1
+SET B, 2
+SET EX, 3
+ADX [results + 45], B ; 6
+SET [results + 46], EX ; 0
+
+SET [results + 47], 0xFFFF
+SET B, 0xFFFF
+SET EX, 0xFFFF
+ADX [results + 47], B ; 0xFFFD
+SET [results + 48], EX ; 1
+
 ;SBX
+SET [results + 49], 10
+SET B, 5
+SET EX, 3
+SBX [results + 49], B ; 10-5+3 == 8
+SET [results + 50], EX ; 0
+
+SET [results + 51], 0
+SET B, 0xFFFF
+SET EX, 0
+SBX [results + 51], B ; 0-ffff+0 == 1 underflow
+SET [results + 52], EX ; 0xFFFF
+
+SET [results + 53], 0xFFFF
+SET B, 0
+SET EX, 0xFFFF
+SBX [results + 53], B ; 0xFFFF-0+0xFFFF == FFFE overflow
+SET [results + 54], EX ; 0x0001
+
 ;STI
+SET I, 0
+SET J, 2
+STI I, J
+SET [results + 55], I ; 3
+SET [results + 55], J ; 3
+
 ;STD
+SET I, 0
+SET J, 2
+STD I, J
+SET [results + 55], I ; 1
+SET [results + 55], J ; 1
+
 :results

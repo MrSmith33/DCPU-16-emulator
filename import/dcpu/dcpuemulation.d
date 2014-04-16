@@ -109,16 +109,17 @@ void basicInstruction(Cpu)(ref Cpu dcpu, ref Instruction instr)
 	ushort opcode = instr.opcode;
 
 	OperandAccess aa = dcpu.getOperandA(instr.operandA, pc, sp); // will increase pc if reads next word
-	ushort a = aa.get();
 
 	OperandAccess ba = dcpu.getOperandB(instr.operandB, pc, sp); // will increase pc if reads next word
-	ushort b = ba.get();
 
 	dcpu.regs.pc = pc;
 	dcpu.regs.sp = sp;
 
 	dcpu.regs.cycles = dcpu.regs.cycles + basicCycles[opcode] + nextWordOperands[instr.operandA] + nextWordOperands[instr.operandB];
 	
+	ushort a = aa.get();
+	ushort b = ba.get();
+
 	uint result;
 
 	with(dcpu) switch (opcode)
@@ -180,11 +181,12 @@ void specialInstruction(Cpu)(ref Cpu dcpu, ref Instruction instr)
 	ushort sp = dcpu.regs.sp;
 
 	OperandAccess aa = dcpu.getOperandA(instr.operandA, pc, sp);
-	ushort a = aa.get();
 
 	dcpu.regs.cycles = dcpu.regs.cycles + specialCycles[opcode] + nextWordOperands[instr.operandA];
 	dcpu.regs.pc = pc;
 	dcpu.regs.sp = sp;
+	
+	ushort a = aa.get();
 
 	with(dcpu) switch (opcode)
 	{
