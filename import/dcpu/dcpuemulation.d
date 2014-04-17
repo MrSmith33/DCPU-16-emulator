@@ -160,8 +160,8 @@ void basicInstruction(Cpu)(ref Cpu dcpu, ref Instruction instr)
 					if (ushort over = result >> 16)
 						regs.ex = (over == 0xFFFF) ? 0xFFFF : 0x0001;
 					break;
-		case STI: result = a; regs.i = cast(ushort)(regs.i + 1); regs.j = cast(ushort)(regs.j + 1); break;
-		case STD: result = a; regs.i = cast(ushort)(regs.i - 1); regs.j = cast(ushort)(regs.j - 1); break;
+		case STI: ba.set(a); regs.i = cast(ushort)(regs.i + 1); regs.j = cast(ushort)(regs.j + 1); return;
+		case STD: ba.set(a); regs.i = cast(ushort)(regs.i - 1); regs.j = cast(ushort)(regs.j - 1); return;
 		default: ;//writeln("Unknown instruction " ~ to!string(instr.opcode)); //Invalid opcode
 	}
 

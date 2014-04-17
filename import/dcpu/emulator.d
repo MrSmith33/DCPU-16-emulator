@@ -61,6 +61,11 @@ public class Emulator(CpuType)
 
 		dcpu.regs.observer.commitFrame(dcpu.regs.instructions);
 		dcpu.mem.observer.commitFrame(dcpu.regs.instructions);
+
+		foreach(IUndoable device; dcpu.devices.values)
+		{
+			device.commitFrame(dcpu.regs.instructions);
+		}
 	}
 
 	// Tries to do cyclesToStep cycles of dcpu.
