@@ -12,85 +12,8 @@ import dcpu.dcpu;
 import dcpu.devices.idevice;
 import dcpu.deviceproxy;
 import dcpu.disassembler;
-
-struct Instruction
-{
-	ubyte opcode;
-	ubyte operandA;
-	ubyte operandB;
-	ubyte size; // in words 1-3
-	ubyte operands; // 2, 1, 0
-	ushort pc;
-	ushort[2] nextWords;
-
-	string toString()
-	{
-		if (operands == 2)
-		{
-			auto aNext = nextWordOperands[operandA];
-			auto bNext = nextWordOperands[operandB];
-			return format("%04x %s %s %s", pc, basicOpcodes[opcode],
-				decodeOperand!false(operandB, format("%04x", nextWords[aNext])),
-				decodeOperand!true(operandA, format("%04x", nextWords[0])));
-		}
-		else
-		{
-			auto aNext = nextWordOperands[operandA];
-			return format("%04x %s %s", pc, specialOpcodes[opcode],
-				decodeOperand!true(operandA, format("%04x", nextWords[0])));
-		}
-	}
-}
-
-Instruction fetchNext(Cpu)(ref Cpu dcpu)
-{
-	return fetchAt(dcpu, dcpu.regs.pc);
-}
-
-Instruction fetchAt(Cpu)(ref Cpu dcpu, ushort address)
-{
-	Instruction result;
-
-	ushort pc = address;
-	ushort sp = dcpu.regs.sp;
-
-	result.pc = pc;
-	ushort instr = dcpu.mem[pc++];
-	result.nextWords[0] = dcpu.mem[pc++];
-	result.nextWords[1] = dcpu.mem[pc++];
-
-	result.opcode = instr & 0b0000000000011111;
-	++result.size;
-
-	if (result.opcode != 0)
-	{
-		result.operandA = (instr & 0b1111110000000000) >> 10;
-		if (nextWordOperands[result.operandA]) ++result.size;
-
-		result.operandB = (instr & 0b0000001111100000) >> 5;
-		if (nextWordOperands[result.operandB]) ++result.size;
-
-		result.operands = 2;
-
-		return result;
-	}
-
-	result.opcode = (instr  & 0b0000001111100000) >> 5;
-
-	if (result.opcode != 0)
-	{
-		result.operandA = (instr & 0b1111110000000000) >> 10;
-		if (nextWordOperands[result.operandA]) ++result.size;
-
-		result.operands = 1;
-
-		return result;
-	}
-
-	result.operands = 0;
-
-	return result;
-}
+import dcpu.dcpuinstruction;
+import dcpu.constants;
 
 void execute(Cpu)(ref Cpu dcpu, ref Instruction instr)
 {
@@ -406,31 +329,3 @@ void skip(Cpu)(ref Cpu dcpu, ref ushort pc)
 
 	dcpu.regs.cycles = dcpu.regs.cycles + 1;
 }
-
-/// Table of literal values which may be stored in 'a' operand.
-private static ushort[32] literals =
-	[0xFFFF, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
-	 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E,
-	 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
-	 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E];
-
-/// Operands which will read nex word increasing pc register are '1', other are '0'.
-private static immutable ushort[64] nextWordOperands =
-	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0,
-	 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ];
-
-/// Table of basic instructions cost.
-private static immutable ubyte[] basicCycles = 
-	[10, 1, 2, 2, 2, 2, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1,
-	 2, 2, 2, 2, 2, 2, 2, 2, 10, 10, 3, 3, 10, 10, 2, 2];
-
-/// Table of special instructions cost.
-private static immutable ubyte[] specialCycles = 
-	[10, 3, 10, 10, 10, 10, 10, 10, 4, 1, 1, 3, 2, 10, 10, 10,
-	 2, 4, 4, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10];
-
-// Enums for opcodes. Just a bit of self documented code.
-private enum {SET = 0x01, ADD, SUB, MUL, MLI, DIV, DVI, MOD, MDI, AND, BOR, XOR, SHR, ASR,
-			SHL, IFB, IFC, IFE, IFN, IFG, IFA, IFL, IFU, ADX = 0x1A, SBX, STI = 0x1E, STD}
-private enum {JSR = 0x01, INT = 0x08, IAG, IAS, RFI, IAQ, HWN = 0x10, HWQ, HWI}

@@ -7,6 +7,8 @@ Authors: Andrey Penechko.
 module dcpu.disassembler;
 
 import std.string : format;
+import dcpu.constants;
+import dcpu.dcpuinstruction;
 
 enum indentStr = "    ";
 
@@ -89,44 +91,6 @@ string[] disassembleSome(ushort[] memory, ushort location = 0, ushort count = 0)
 
 	return lines;
 }
-
-string decodeOperand(bool isA)(ushort operand, lazy string nextWord)
-{
-	switch(operand)
-	{
-		case 0x00: .. case 0x07: // register
-			return registers[operand];
-		case 0x08: .. case 0x0f: // [register]
-			return "["~registers[operand - 0x08]~"]";
-		case 0x10: .. case 0x17: // [register + next word]
-			return "["~registers[operand - 0x10]~" + 0x"~nextWord~"]";
-		case 0x18: // PUSH / POP
-			static if (isA) return "POP"; else return "PUSH";
-		case 0x19: // [SP] / PEEK
-			return "[SP]";
-		case 0x1a: // [SP + next word]
-			return "[SP + 0x"~nextWord~"]";
-		case 0x1b: // SP
-			return "SP";
-		case 0x1c: // PC
-			return "PC";
-		case 0x1d: // EX
-			return "EX";
-		case 0x1e: // [next word]
-			return "[0x"~nextWord~"]";
-		case 0x1f: // next word
-			return "0x"~nextWord;
-		default: // 0xffff-0x1e (-1..30) (literal) (only for a)
-			return format("0x%04x", cast(ushort)(operand - 0x21));
-	}
-}
-
-static string[] registers = ["A", "B", "C", "X", "Y", "Z", "I", "J"];
-
-static string[] basicOpcodes = ["0x00", "SET", "ADD", "SUB", "MUL", "MLI", "DIV", "DVI", "MOD", "MDI", "AND", "BOR", "XOR",
-"SHR", "ASR", "SHL", "IFB", "IFC", "IFE", "IFN", "IFG", "IFA", "IFL", "IFU", "0x18", "0x19", "ADX", "SBX", "0x1c", "0x1d", "STI", "STD"];
-static string[] specialOpcodes = ["0x00", "JSR", "0x02", "0x03", "0x04", "0x05", "0x06", "0x07", "INT", "IAG", "IAS", "RFI", "IAQ", "0x0d",
-"0x0e", "0x0f", "HWN", "HWQ", "HWI", "0x0d", "0x13", "0x14", "0x15", "0x16", "0x17", "0x18", "0x19", "0x1a", "0x1b", "0x1c", "0x1d", "0x1e", "0x1f"];
 
 enum BlockType
 {

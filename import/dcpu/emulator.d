@@ -12,9 +12,11 @@ import std.stdio;
 
 import dcpu.dcpu;
 static import dcpu.dcpu;
-public import dcpu.dcpuemulation;
 import dcpu.devices.idevice;
 import dcpu.deviceproxy;
+
+public import dcpu.dcpuemulation;
+public import dcpu.dcpuinstruction;
 
 //@safe nothrow:
 
