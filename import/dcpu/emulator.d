@@ -17,6 +17,7 @@ import dcpu.deviceproxy;
 
 public import dcpu.dcpuemulation;
 public import dcpu.dcpuinstruction;
+import dcpu.emulationstats;
 
 //@safe nothrow:
 
@@ -24,6 +25,7 @@ public import dcpu.dcpuinstruction;
 public class Emulator(CpuType)
 {
 	CpuType dcpu; /// data storage: memory, registers.
+	EmulationStatistics stats;
 
 	void attachDevice(IDevice!CpuType device)
 	{
@@ -45,8 +47,6 @@ public class Emulator(CpuType)
 
 		Instruction instr = dcpu.fetchNext();
 
-		//writeln(instr);
-
 		dcpu.execute(instr);
 
 		// Handle interrupts only when interrupt queuing is disabled.
@@ -58,9 +58,14 @@ public class Emulator(CpuType)
 
 		ulong diff = dcpu.regs.cycles - initialCycles;
 
+		// Update statistics
+		stats.onInstructionDone(instr, diff);
+
+		// Update devices
 		dcpu.updateQueue.onTick(diff);
 		dcpu.regs.instructions = dcpu.regs.instructions + 1;
 
+		// Commit changes to undo stack
 		dcpu.regs.observer.commitFrame(dcpu.regs.instructions);
 		dcpu.mem.observer.commitFrame(dcpu.regs.instructions);
 
@@ -93,9 +98,10 @@ public class Emulator(CpuType)
 		}
 	}
 
-	/*/// Resets dcpu state and interpreter state to their initial state.
+	/// Resets dcpu state and interpreter state to their initial state.
 	void reset()
 	{
-		reset(dcpu);
-	}*/
+		.reset(dcpu);
+		stats.reset();
+	}
 }

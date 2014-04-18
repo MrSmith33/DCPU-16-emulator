@@ -25,17 +25,27 @@ struct Instruction
 		{
 			auto aNext = nextWordOperands[operandA];
 			auto bNext = nextWordOperands[operandB];
-			return format("%04x %s %s %s", pc, basicOpcodes[opcode],
+			return format("%04x %s %s %s", pc, basicOpcodeNames[opcode],
 				decodeOperand!false(operandB, format("%04x", nextWords[aNext])),
 				decodeOperand!true(operandA, format("%04x", nextWords[0])));
 		}
 		else
 		{
 			auto aNext = nextWordOperands[operandA];
-			return format("%04x %s %s", pc, specialOpcodes[opcode],
+			return format("%04x %s %s", pc, specialOpcodeNames[opcode],
 				decodeOperand!true(operandA, format("%04x", nextWords[0])));
 		}
 	}
+}
+
+bool isValidInstruction(ref Instruction instr)
+{
+	if(instr.operands == 2)
+		return isValidBasicOpcode[instr.opcode];
+	else if(instr.operands == 1)
+		return isValidSpecialOpcode[instr.opcode];
+	else
+		return false;
 }
 
 Instruction fetchNext(Cpu)(ref Cpu dcpu)

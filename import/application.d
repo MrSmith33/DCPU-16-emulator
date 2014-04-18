@@ -126,10 +126,10 @@ class EmulatorApplication : Application!GlfwWindow
 
 		auto stepButton10 = context.getWidgetById("step10");
 		stepButton10.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){emulator.stepInstructions(10); printRegisters(); return true;});
+		
 		auto stepButton100 = context.getWidgetById("step100");
 		stepButton100.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){emulator.stepInstructions(100); printRegisters(); return true;});
 		
-
 		runButton = context.getWidgetById("run");
 		runButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){runPause(); return true;});
 
@@ -141,6 +141,9 @@ class EmulatorApplication : Application!GlfwWindow
 
 		auto swapButton = context.getWidgetById("swap");
 		swapButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){swapFileEndian(file); return true;});
+
+		auto statsButton = context.getWidgetById("stats");
+		statsButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){emulator.stats.print(); return true;});
 
 		registerView = context.getWidgetById("registerView");
 		foreach(i; 0..15) context.createWidget("label", registerView);
@@ -157,7 +160,7 @@ class EmulatorApplication : Application!GlfwWindow
 
 	bool reset(Widget widget, PointerClickEvent event)
 	{
-		emulator.dcpu.reset();
+		emulator.reset();
 		attachDevices();
 		emulator.loadProgram(loadBinary(file));
 		printRegisters();

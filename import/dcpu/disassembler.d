@@ -51,13 +51,13 @@ string[] disassembleSome(ushort[] memory, ushort location = 0, ushort count = 0)
 			string a = decodeOperand!true(instr >> 10, nextWord());
 			string b = decodeOperand!false((instr >> 5) & 0x1F, nextWord());
 			
-			instrStr = format("0x%04x: %s", address, indent) ~ basicOpcodes[instr & 0x1F] ~ "  " ~ b ~ ", " ~ a;
+			instrStr = format("0x%04x: %s", address, indent) ~ basicOpcodeNames[instr & 0x1F] ~ "  " ~ b ~ ", " ~ a;
 
 			prevInstr = instr & 0x1F;
 		}
 		else if (((instr >> 5) & 0x1F) != 0)
 		{
-			instrStr = format("0x%04x: %s", address, indent) ~ specialOpcodes[(instr >> 5) & 0x1F] ~ "  " ~ decodeOperand!true(instr >> 10, nextWord());
+			instrStr = format("0x%04x: %s", address, indent) ~ specialOpcodeNames[(instr >> 5) & 0x1F] ~ "  " ~ decodeOperand!true(instr >> 10, nextWord());
 			prevInstr = 0;
 			indent = "";
 		}
