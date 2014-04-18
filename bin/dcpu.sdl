@@ -7,13 +7,7 @@ template:mainLayer {
 				widget layout="horizontal" isVisible=false {
 					image id="monitor" minSize="408 312" #"136 104" #"272 208" #"408 312"
 				}
-
-				widget layout="vertical" style="button" padding=2 {
-					label id="reg1"
-					label id="reg2"
-					label id="reg3"
-					label id="reg4"
-				}
+				widget layout="vertical" id="registerView" padding=2 style="edit"
 			}
 			widget layout="horizontal" isVisible=false padding=2 {
 				text-button id="step" text="Step"

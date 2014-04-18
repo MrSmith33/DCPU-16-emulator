@@ -43,7 +43,7 @@ class EmulatorApplication : Application!GlfwWindow
 	GenericClock!DebugDcpu clock;
 	GenericKeyboard!DebugDcpu keyboard;
 	FloppyDrive!DebugDcpu floppyDrive;
-	Widget reg1, reg2, reg3, reg4;
+	Widget registerView;
 	MemoryView!DebugDcpu memoryList;
 
 	bool dcpuRunning = false;
@@ -142,11 +142,10 @@ class EmulatorApplication : Application!GlfwWindow
 		auto swapButton = context.getWidgetById("swap");
 		swapButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){swapFileEndian(file); return true;});
 
-		reg1 = context.getWidgetById("reg1");
-		reg2 = context.getWidgetById("reg2");
-		reg3 = context.getWidgetById("reg3");
-		reg4 = context.getWidgetById("reg4");
+		registerView = context.getWidgetById("registerView");
+		foreach(i; 0..15) context.createWidget("label", registerView);
 		printRegisters();
+
 
 		memoryList = new MemoryView!DebugDcpu(&emulator.dcpu);
 		auto memoryView = context.getWidgetById("memoryview");
@@ -211,10 +210,21 @@ class EmulatorApplication : Application!GlfwWindow
 	{
 		with(emulator.dcpu)
 		{
-			reg1["text"] = format("PC 0x%04x SP 0x%04x EX 0x%04x IA 0x%04x", regs.pc, regs.sp, regs.ex, regs.ia);
-		 	reg2["text"] = format(" A 0x%04x  B 0x%04x  C 0x%04x  X 0x%04x", regs.a, regs.b, regs.c, regs.x);
-		 	reg3["text"] = format(" Y 0x%04x  Z 0x%04x  I 0x%04x  J 0x%04x", regs.y, regs.z, regs.i, regs.j);
-		 	reg4["text"] = format("Ticks: %s Instructions: %s", emulator.dcpu.regs.cycles, emulator.dcpu.regs.instructions);
+		 	registerView.getPropertyAs!("children", Widget[])[ 0]["text"] = format("PC %04x | [PC] %04x", regs.pc, mem[regs.pc]);
+		 	registerView.getPropertyAs!("children", Widget[])[ 1]["text"] = format("SP %04x | [SP] %04x", regs.sp, mem[regs.sp]);
+		 	registerView.getPropertyAs!("children", Widget[])[ 2]["text"] = format("EX %04x | [EX] %04x", regs.ex, mem[regs.ex]);
+		 	registerView.getPropertyAs!("children", Widget[])[ 3]["text"] = format("IA %04x | [IA] %04x", regs.ia, mem[regs.ia]);
+		 	registerView.getPropertyAs!("children", Widget[])[ 4]["text"] = format(" A %04x | [ A] %04x", regs.a , mem[regs.a ]);
+		 	registerView.getPropertyAs!("children", Widget[])[ 5]["text"] = format(" B %04x | [ B] %04x", regs.b , mem[regs.b ]);
+		 	registerView.getPropertyAs!("children", Widget[])[ 6]["text"] = format(" C %04x | [ C] %04x", regs.c , mem[regs.c ]);
+		 	registerView.getPropertyAs!("children", Widget[])[ 7]["text"] = format(" X %04x | [ X] %04x", regs.x , mem[regs.x ]);
+		 	registerView.getPropertyAs!("children", Widget[])[ 8]["text"] = format(" Y %04x | [ Y] %04x", regs.y , mem[regs.y ]);
+		 	registerView.getPropertyAs!("children", Widget[])[ 9]["text"] = format(" Z %04x | [ Z] %04x", regs.z , mem[regs.z ]);
+		 	registerView.getPropertyAs!("children", Widget[])[10]["text"] = format(" I %04x | [ I] %04x", regs.i , mem[regs.i ]);
+		 	registerView.getPropertyAs!("children", Widget[])[11]["text"] = format(" J %04x | [ J] %04x", regs.j , mem[regs.j ]);
+		 	registerView.getPropertyAs!("children", Widget[])[12]["text"] = format("Ticks: %s", regs.cycles);
+		 	registerView.getPropertyAs!("children", Widget[])[13]["text"] = "Instructions done";
+		 	registerView.getPropertyAs!("children", Widget[])[14]["text"] = format("%s", regs.instructions);
 		}
 	}
 

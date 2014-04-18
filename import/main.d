@@ -20,6 +20,6 @@ import anchovy.gui;
 
 void main(string[] args)
 {
-	auto app = new EmulatorApplication(uvec2(1280, 600), "DCPU-16 emulator");
+	auto app = new EmulatorApplication(uvec2(1000, 600), "DCPU-16 emulator");
 	app.run(args);
 }
