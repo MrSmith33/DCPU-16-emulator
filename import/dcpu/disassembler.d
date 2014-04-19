@@ -91,23 +91,3 @@ string[] disassembleSome(ushort[] memory, ushort location = 0, ushort count = 0)
 
 	return lines;
 }
-
-enum BlockType
-{
-	code,
-	data
-}
-
-struct Jump
-{
-	ushort from;
-	ushort to;
-}
-
-struct MemoryBlock
-{
-	BlockType type;
-	size_t words; // number of memory words
-	size_t position; // position in memory
-	size_t lines; // disassembly lines
-}

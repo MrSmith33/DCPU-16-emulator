@@ -38,6 +38,23 @@ struct Instruction
 	}
 }
 
+struct InstructionInfo
+{
+	bool isConditional;
+	bool isValid;
+	bool modifiesProgramCounter;
+}
+
+InstructionInfo instructionInfo(ref Instruction instr)
+{
+	InstructionInfo info;
+	info.isConditional = isConditionalInstruction(instr);
+	info.isValid = isValidInstruction(instr);
+	//if (instr.operands == 2 && instr.operandB == )
+
+	return info;
+}
+
 bool isValidInstruction(ref Instruction instr)
 {
 	if(instr.operands == 2)
@@ -46,6 +63,13 @@ bool isValidInstruction(ref Instruction instr)
 		return isValidSpecialOpcode[instr.opcode];
 	else
 		return false;
+}
+
+bool isConditionalInstruction(ref Instruction instr)
+{
+	return  instr.operands == 2 &&
+			instr.opcode >= IFB &&
+			instr.opcode <= IFU;
 }
 
 Instruction fetchNext(Cpu)(ref Cpu dcpu)
@@ -129,3 +153,36 @@ string decodeOperand(bool isA)(ushort operand, lazy string nextWord)
 			return format("0x%04x", cast(ushort)(operand - 0x21));
 	}
 }
+
+// true if operand can be modified by opcode
+static bool[64] isOperandRegister =
+[1,1,1,1,1,1,1,1, // A-J
+ 0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,
+ 0,0,1,1,1,0,0,0, // SP, PC, EX
+ 0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,];
+
+static bool[64] isOperandImmediate =
+[0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,1,1,
+ 1,1,1,1,1,1,1,1,
+ 1,1,1,1,1,1,1,1,
+ 1,1,1,1,1,1,1,1,
+ 1,1,1,1,1,1,1,1,];
+
+// true if operand can be modified by opcode or
+// just by getting (like PUSH, POP modifies SP)
+static bool[64] canOperandModifyRegister =
+[1,1,1,1,1,1,1,1, // !-J
+ 0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,
+ 1,1,1,1,1,0,0,0, // --SP, SP++, SP, PC, EX
+ 0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,];

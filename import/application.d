@@ -22,6 +22,7 @@ import anchovy.gui.application.application;
 
 import dcpu.emulator;
 import dcpu.disassembler;
+import dcpu.memoryanalyzer;
 import dcpu.dcpu;
 import dcpu.updatequeue;
 import memoryview;
@@ -45,6 +46,7 @@ class EmulatorApplication : Application!GlfwWindow
 	FloppyDrive!DebugDcpu floppyDrive;
 	Widget registerView;
 	MemoryView!DebugDcpu memoryList;
+	MemoryAnalyzer!DebugDcpu memAnalyzer;
 
 	bool dcpuRunning = false;
 	Widget runButton;
@@ -95,6 +97,7 @@ class EmulatorApplication : Application!GlfwWindow
 		keyboard = new GenericKeyboard!DebugDcpu;
 		floppyDrive = new FloppyDrive!DebugDcpu;
 		floppyDrive.floppy = new Floppy;
+		memAnalyzer = new MemoryAnalyzer!DebugDcpu(&emulator.dcpu);
 		attachDevices();
 		
 		emulator.loadProgram(loadBinary(file));
@@ -203,6 +206,21 @@ class EmulatorApplication : Application!GlfwWindow
 
 	void disassembleMemory()
 	{
+		memAnalyzer.buildMemoryMap();
+
+		writeln("\nBlocks");
+		foreach(block; memAnalyzer.memoryMap.blocks)
+		{
+			writeln(*block);
+		}
+
+		writeln("\nTransitions");
+		foreach(transition; memAnalyzer.memoryMap.transitions)
+		{
+			writeln(*transition);
+		}
+
+		writeln("\nDisassembly");
 		foreach(line; disassembleSome(emulator.dcpu.mem.memory, 0, 0))
 		{
 			writeln(line);
