@@ -180,6 +180,13 @@ public:
 		memoryMap.transitions.sort!"a.to < b.to";
 		memoryMap.blocks.sort!"a.position < b.position";
 
+		uint[TransitionType.max+1] transitionTypeCounters;
+		foreach(i, transition; memoryMap.transitions)
+		{
+			transition.index = i;
+			transition.typeIndex = transitionTypeCounters[transition.type]++;
+		}
+
 		foreach(i, block; memoryMap.blocks)
 		{
 			block.index = i;
@@ -208,6 +215,8 @@ struct Transition
 	TransitionType type;
 	MemoryBlock* fromBlock;
 	MemoryBlock* toBlock;
+	size_t index; // index in transition list. Used for setting labels
+	size_t typeIndex; // index in transition list of specific type.
 
 	string toString()
 	{

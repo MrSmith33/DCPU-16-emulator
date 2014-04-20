@@ -221,7 +221,7 @@ class EmulatorApplication : Application!GlfwWindow
 		}
 
 		writeln("\nDisassembly");
-		foreach(line; disassembleSome(emulator.dcpu.mem.memory, 0, 0))
+		foreach(line; disassembleSome(emulator.dcpu.mem.memory, memAnalyzer.memoryMap, 0, 0))
 		{
 			writeln(line);
 		}

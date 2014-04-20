@@ -7,12 +7,15 @@ Authors: Andrey Penechko.
 module dcpu.disassembler;
 
 import std.string : format;
+import std.conv;
+
 import dcpu.constants;
 import dcpu.dcpuinstruction;
+import dcpu.memoryanalyzer;
 
 enum indentStr = "    ";
 
-string[] disassembleSome(ushort[] memory, ushort location = 0, ushort count = 0)
+string[] disassembleSome(ushort[] memory, MemoryMap memMap, ushort location = 0, ushort count = 0)
 {
 	uint pointer = location;
 	ushort numInstructions = 0;
@@ -35,6 +38,24 @@ string[] disassembleSome(ushort[] memory, ushort location = 0, ushort count = 0)
 
 		uint address = pointer;
 		ushort instr = memory[pointer++];
+
+		uint intHandlers;
+		if (auto transition = find!"a.to == b"(memMap.transitions, address))
+		{
+			if (transition.length)
+			{
+				lines ~= "";
+				
+				Transition* trans = transition[0];
+
+				if (trans.index == 0)
+					lines ~= "start:";
+				else if (trans.type == TransitionType.interrupt)
+					lines ~= format("int_handler_%s:", trans.typeIndex);
+				else
+					lines ~= format("label_%s:", trans.index);
+			}
+		}
 
 		if (instr == 0)
 		{
