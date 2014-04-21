@@ -26,14 +26,14 @@ struct Instruction
 			auto aNext = nextWordOperands[operandA];
 			auto bNext = nextWordOperands[operandB];
 			return format("%04x %s %s %s", pc, basicOpcodeNames[opcode],
-				decodeOperand!false(operandB, format("%04x", nextWords[aNext])),
-				decodeOperand!true(operandA, format("%04x", nextWords[0])));
+				decodeOperand!false(operandB, nextWords[aNext]),
+				decodeOperand!true(operandA, nextWords[0]));
 		}
 		else
 		{
 			auto aNext = nextWordOperands[operandA];
 			return format("%04x %s %s", pc, specialOpcodeNames[opcode],
-				decodeOperand!true(operandA, format("%04x", nextWords[0])));
+				decodeOperand!true(operandA, nextWords[0]));
 		}
 	}
 }
@@ -123,7 +123,69 @@ Instruction fetchAt(Cpu)(ref Cpu dcpu, ushort address)
 	return result;
 }
 
-string decodeOperand(bool isA)(ushort operand, lazy string nextWord)
+OperandAccess getOperandA(Cpu)(ref Cpu dcpu, ushort operandBits, ref ushort pc, ref ushort sp)
+{
+	return getOperandValue!true(dcpu, operandBits, pc, sp);
+}
+
+OperandAccess getOperandB(Cpu)(ref Cpu dcpu, ushort operandBits, ref ushort pc, ref ushort sp)
+{
+	return getOperandValue!false(dcpu, operandBits, pc, sp);
+}
+
+/// Extracts operand value from a dcpu
+OperandAccess getOperandValue(bool isA, Cpu)(ref Cpu dcpu, ushort operandBits, ref ushort pc, ref ushort sp)
+in
+{
+	assert(operandBits <= 0x3F, "operand must be lower than 0x40");
+	static if (!isA)
+		assert(operandBits <= 0x1F);
+}
+body
+{
+	with(dcpu) switch(operandBits)
+	{
+		case 0x00: .. case 0x07: // register
+			return dcpu.regAccess(operandBits);
+		case 0x08: .. case 0x0F: // [register]
+			return dcpu.memAccess(regs[operandBits & 7]);
+		case 0x10: .. case 0x17: // [register + next word]
+			return dcpu.memAccess((regs[operandBits & 7] + mem[pc++]) & 0xFFFF);
+		case 0x18: // PUSH / POP
+			static if (isA)
+				return dcpu.memAccess(sp++);
+			else
+				return dcpu.memAccess(--sp);
+		case 0x19: // [SP] / PEEK
+			return dcpu.memAccess(sp);
+		case 0x1a: // [SP + next word]
+			return dcpu.memAccess(cast(ushort)(sp + mem[pc++]));
+		case 0x1b: // SP
+			return dcpu.regAccess(8);
+		case 0x1c: // PC
+			return dcpu.regAccess(9);
+		case 0x1d: // EX
+			return dcpu.regAccess(10);
+		case 0x1e: // [next word]
+			return dcpu.memAccess(mem[pc++]);
+		case 0x1f: // next word
+			return dcpu.memAccess(pc++);
+		default: // 0xffff-0x1e (-1..30) (literal) (only for a)
+			return litAccess(literals[operandBits & 0x1F]);
+	}
+}
+
+alias LiteralDecoder = string delegate(ushort);
+
+/*LiteralDecoder plainLitDecoder = delegate string(ushort literal)
+{
+	return format("%#04x", literal);
+};*/
+
+string decodeOperand(bool isA)(ushort operand, lazy ushort nextWord, LiteralDecoder literalDecoder = delegate string(ushort literal)
+{
+	return format("%#04x", literal);
+})
 {
 	switch(operand)
 	{
@@ -132,13 +194,13 @@ string decodeOperand(bool isA)(ushort operand, lazy string nextWord)
 		case 0x08: .. case 0x0f: // [register]
 			return "["~registerNames[operand - 0x08]~"]";
 		case 0x10: .. case 0x17: // [register + next word]
-			return "["~registerNames[operand - 0x10]~" + 0x"~nextWord~"]";
+			return "["~registerNames[operand - 0x10]~" + "~literalDecoder(nextWord)~"]";
 		case 0x18: // PUSH / POP
 			static if (isA) return "POP"; else return "PUSH";
 		case 0x19: // [SP] / PEEK
 			return "[SP]";
 		case 0x1a: // [SP + next word]
-			return "[SP + 0x"~nextWord~"]";
+			return "[SP + "~literalDecoder(nextWord)~"]";
 		case 0x1b: // SP
 			return "SP";
 		case 0x1c: // PC
@@ -146,12 +208,42 @@ string decodeOperand(bool isA)(ushort operand, lazy string nextWord)
 		case 0x1d: // EX
 			return "EX";
 		case 0x1e: // [next word]
-			return "[0x"~nextWord~"]";
+			return "["~literalDecoder(nextWord)~"]";
 		case 0x1f: // next word
-			return "0x"~nextWord;
+			return literalDecoder(nextWord);
 		default: // 0xffff-0x1e (-1..30) (literal) (only for a)
-			return format("0x%04x", cast(ushort)(operand - 0x21));
+			return literalDecoder(cast(ushort)(operand - 0x21));
 	}
+}
+
+struct OperandAccess
+{
+	ushort delegate() get;
+	ushort delegate(ushort) set;
+}
+
+OperandAccess memAccess(Cpu)(ref Cpu dcpu, ushort memLocation)
+{
+	return OperandAccess(
+		{return dcpu.mem[memLocation];},
+		(ushort value){return dcpu.mem[memLocation] = value;}
+	);
+}
+
+OperandAccess regAccess(Cpu)(ref Cpu dcpu, ushort regLocation)
+{
+	return OperandAccess(
+		{return dcpu.regs[regLocation];},
+		(ushort value){return dcpu.regs[regLocation] = value;}
+	);
+}
+
+OperandAccess litAccess(ushort literal)
+{
+	return OperandAccess(
+		{return literal;},
+		(ushort value){return literal;} // illegal. Fails silently
+	);
 }
 
 // true if operand can be modified by opcode

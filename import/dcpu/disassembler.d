@@ -20,12 +20,12 @@ string[] disassembleSome(ushort[] memory, MemoryMap memMap, ushort location = 0,
 	uint pointer = location;
 	ushort numInstructions = 0;
 
-	string nextWord()
+	ushort nextWord()
 	{
 		if (pointer >= memory.length)
-			return "???";
-		else
-			return format("%04x", memory[pointer++]);
+			return 0;
+		else 
+			return memory[pointer++];
 	}
 
 	string[] lines;
@@ -38,6 +38,30 @@ string[] disassembleSome(ushort[] memory, MemoryMap memMap, ushort location = 0,
 
 		uint address = pointer;
 		ushort instr = memory[pointer++];
+
+		
+
+		string literalDecoder(ushort literal)
+		{
+			if (auto transition = find!"a.from == b"(memMap.transitions, address))
+			{
+				if (transition.length && transition[0].to == literal)
+				{
+					Transition* trans = transition[0];
+
+					if (trans.index == 0)
+						return "start";
+					else if (trans.type == TransitionType.interrupt)
+						return format("int_handler_%s", trans.typeIndex);
+					else if (trans.type == TransitionType.call)
+						return format("subroutine_%s", trans.typeIndex);
+					else
+						return format("label_%s", trans.typeIndex);
+				}
+			}
+
+			return format("%#04x", literal);
+		}
 
 		uint intHandlers;
 		if (auto transition = find!"a.to == b"(memMap.transitions, address))
@@ -52,8 +76,10 @@ string[] disassembleSome(ushort[] memory, MemoryMap memMap, ushort location = 0,
 					lines ~= "start:";
 				else if (trans.type == TransitionType.interrupt)
 					lines ~= format("int_handler_%s:", trans.typeIndex);
+				else if (trans.type == TransitionType.call)
+					lines ~= format("subroutine_%s:", trans.typeIndex);
 				else
-					lines ~= format("label_%s:", trans.index);
+					lines ~= format("label_%s:", trans.typeIndex);
 			}
 		}
 
@@ -69,16 +95,20 @@ string[] disassembleSome(ushort[] memory, MemoryMap memMap, ushort location = 0,
 
 		if ((instr & 0x1F) != 0)
 		{
-			string a = decodeOperand!true(instr >> 10, nextWord());
-			string b = decodeOperand!false((instr >> 5) & 0x1F, nextWord());
+			string a = decodeOperand!true(instr >> 10, nextWord(), &literalDecoder);
+			string b = decodeOperand!false((instr >> 5) & 0x1F, nextWord(), &literalDecoder);
 			
-			instrStr = format("0x%04x: %s", address, indent) ~ basicOpcodeNames[instr & 0x1F] ~ "  " ~ b ~ ", " ~ a;
+			instrStr = format("0x%04x: %s%s  %s, %s", address, indent, basicOpcodeNames[instr & 0x1F], b, a);
 
 			prevInstr = instr & 0x1F;
 		}
 		else if (((instr >> 5) & 0x1F) != 0)
 		{
-			instrStr = format("0x%04x: %s", address, indent) ~ specialOpcodeNames[(instr >> 5) & 0x1F] ~ "  " ~ decodeOperand!true(instr >> 10, nextWord());
+			instrStr = format("0x%04x: %s%s  %s",
+				address,
+				indent,
+				specialOpcodeNames[(instr >> 5) & 0x1F],
+				decodeOperand!true(instr >> 10, nextWord(), &literalDecoder));
 			prevInstr = 0;
 			indent = "";
 		}

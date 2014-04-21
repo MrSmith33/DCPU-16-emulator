@@ -67,6 +67,8 @@ struct DebugDcpu
 	bool isBurning = false;
 	bool isRunning = false;
 
+	size_t imageSize;
+
 	ushort numDevices() @property @trusted
 	{
 		return cast(ushort)devices.length;

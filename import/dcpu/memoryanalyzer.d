@@ -47,7 +47,7 @@ public:
 	{
 		auto processQueue = Appender!(Transition*[])([]); // control flow transitions (JMP and set, add, sub pc)
 
-		processQueue ~= new Transition(0, defaultEntryPoint, TransitionType.unconditional);
+		processQueue ~= new Transition(0, defaultEntryPoint, TransitionType.jump, false);
 
 		void processEntryPoint(Transition* transition)
 		{
@@ -106,7 +106,7 @@ public:
 
 							// outcoming transition
 							auto newTransition = new Transition(pointer, transitionTo,
-								inCondition ? TransitionType.conditional : TransitionType.unconditional, block);
+								TransitionType.jump, inCondition, block);
 							
 							block.transitionsFrom ~= newTransition;
 							processQueue ~= newTransition;
@@ -130,7 +130,7 @@ public:
 
 						// outcoming transition
 						auto newTransition = new Transition(pointer, transitionTo,
-								inCondition ? TransitionType.conditional : TransitionType.unconditional, block);
+							TransitionType.call, inCondition, block);
 						
 						block.transitionsFrom ~= newTransition;
 						processQueue ~= newTransition;
@@ -144,7 +144,8 @@ public:
 						ushort transitionTo = getOperandA(*_dcpu, instr.operandA, pc, sp).get();
 
 						// outcoming transition. Indirect
-						auto newTransition = new Transition(pointer, transitionTo, TransitionType.interrupt, block);
+						auto newTransition = new Transition(pointer, transitionTo,
+							TransitionType.interrupt, inCondition, block);
 						
 						block.transitionsFrom ~= newTransition;
 						processQueue ~= newTransition;
@@ -177,6 +178,7 @@ public:
 			processEntryPoint(trans);
 		}
 
+		// sort blocks and transitions.
 		memoryMap.transitions.sort!"a.to < b.to";
 		memoryMap.blocks.sort!"a.position < b.position";
 
@@ -203,8 +205,8 @@ enum BlockType
 
 enum TransitionType
 {
-	conditional,
-	unconditional,
+	call,
+	jump,
 	interrupt
 }
 
@@ -213,6 +215,7 @@ struct Transition
 	ushort from;
 	ushort to;
 	TransitionType type;
+	bool conditional;
 	MemoryBlock* fromBlock;
 	MemoryBlock* toBlock;
 	size_t index; // index in transition list. Used for setting labels
