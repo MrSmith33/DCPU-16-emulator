@@ -45,41 +45,22 @@ string[] disassembleSome(ushort[] memory, MemoryMap memMap, ushort location = 0,
 		{
 			if (auto transition = find!"a.from == b"(memMap.transitions, address))
 			{
-				if (transition.length && transition[0].to == literal)
+				if (transition.length && transition[0].target.position == literal)
 				{
-					Transition* trans = transition[0];
-
-					if (trans.index == 0)
-						return "start";
-					else if (trans.type == TransitionType.interrupt)
-						return format("int_handler_%s", trans.typeIndex);
-					else if (trans.type == TransitionType.call)
-						return format("subroutine_%s", trans.typeIndex);
-					else
-						return format("label_%s", trans.typeIndex);
+					return to!string(*(transition[0].target));
 				}
 			}
 
 			return format("%#04x", literal);
 		}
 
-		uint intHandlers;
-		if (auto transition = find!"a.to == b"(memMap.transitions, address))
+		// Place label if there is at current position
+		if (auto labels = find!"(*a).position == b"(memMap.labels, address))
 		{
-			if (transition.length)
+			if (labels.length)
 			{
 				lines ~= "";
-				
-				Transition* trans = transition[0];
-
-				if (trans.index == 0)
-					lines ~= "start:";
-				else if (trans.type == TransitionType.interrupt)
-					lines ~= format("int_handler_%s:", trans.typeIndex);
-				else if (trans.type == TransitionType.call)
-					lines ~= format("subroutine_%s:", trans.typeIndex);
-				else
-					lines ~= format("label_%s:", trans.typeIndex);
+				lines ~= format("%s:", *labels[0]);
 			}
 		}
 
@@ -92,20 +73,18 @@ string[] disassembleSome(ushort[] memory, MemoryMap memMap, ushort location = 0,
 
 		if (prevInstr >= 0x10 && prevInstr <= 0x17) indent ~= indentStr;
 
-
 		if ((instr & 0x1F) != 0)
 		{
 			string a = decodeOperand!true(instr >> 10, nextWord(), &literalDecoder);
 			string b = decodeOperand!false((instr >> 5) & 0x1F, nextWord(), &literalDecoder);
 			
-			instrStr = format("0x%04x: %s%s  %s, %s", address, indent, basicOpcodeNames[instr & 0x1F], b, a);
+			instrStr = format("%s%s  %s, %s", indent, basicOpcodeNames[instr & 0x1F], b, a);
 
 			prevInstr = instr & 0x1F;
 		}
 		else if (((instr >> 5) & 0x1F) != 0)
 		{
-			instrStr = format("0x%04x: %s%s  %s",
-				address,
+			instrStr = format("%s%s  %s",
 				indent,
 				specialOpcodeNames[(instr >> 5) & 0x1F],
 				decodeOperand!true(instr >> 10, nextWord(), &literalDecoder));
@@ -114,7 +93,7 @@ string[] disassembleSome(ushort[] memory, MemoryMap memMap, ushort location = 0,
 		}
 		else
 		{
-			instrStr = format("0x%04x: %s0x%02x 0x%02x, 0x%02x", address, indent, instr & 0x1F, (instr >> 5) & 0x1F, instr >> 10);
+			instrStr = format("%s%#02x %#02x, %#02x", indent, instr & 0x1F, (instr >> 5) & 0x1F, instr >> 10);
 			prevInstr = 0;
 			indent = "";
 		}

@@ -211,19 +211,25 @@ class EmulatorApplication : Application!GlfwWindow
 		writeln("\nBlocks");
 		foreach(block; memAnalyzer.memoryMap.blocks)
 		{
-			writeln(*block);
+			writefln("    %s",*block);
 		}
 
 		writeln("\nTransitions");
 		foreach(transition; memAnalyzer.memoryMap.transitions)
 		{
-			writeln(*transition);
+			writefln("    %s",*transition);
+		}
+
+		writeln("\nLabels");
+		foreach(label; memAnalyzer.memoryMap.labels)
+		{
+			writefln("    %s",*label);
 		}
 
 		writeln("\nDisassembly");
 		foreach(line; disassembleSome(emulator.dcpu.mem.memory, memAnalyzer.memoryMap, 0, 0))
 		{
-			writeln(line);
+			writefln("%s",line);
 		}
 	}
 

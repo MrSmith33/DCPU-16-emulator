@@ -8,8 +8,9 @@ module dcpu.memoryanalyzer;
 
 import std.array;
 import std.algorithm : sort, find;
+import std.conv : to;
 import std.string : format;
-import std.stdio;
+import std.stdio : writeln, writefln;
 
 import dcpu.dcpu;
 import dcpu.constants;
@@ -43,15 +44,39 @@ public:
 		return null;
 	}
 
+	Label* labelAt(ushort position, LabelType type)
+	{
+		auto labels = find!"a.position == b"(memoryMap.labels, position);
+
+		if (labels.length)
+		{
+			if (labels[0].type == LabelType.label && type == LabelType.subroutine)
+				labels[0].type = type;
+
+			return labels[0];
+		}
+
+		auto newLabel = new Label(position, type);
+
+		writefln("New %s label at %04x ", type, position);
+
+		memoryMap.labels ~= newLabel;
+
+		return newLabel;
+	}
+
 	void buildMemoryMap()
 	{
 		auto processQueue = Appender!(Transition*[])([]); // control flow transitions (JMP and set, add, sub pc)
 
-		processQueue ~= new Transition(0, defaultEntryPoint, TransitionType.jump, false);
+		processQueue ~= new Transition(0,
+			labelAt(defaultEntryPoint, LabelType.label),
+			TransitionType.entry,
+			false);
 
-		void processEntryPoint(Transition* transition)
+		void processTransition(Transition* transition)
 		{
-			ushort entryPoint = transition.to;
+			ushort entryPoint = transition.target.position;
 
 			// Transition to an existing block
 			if (auto blockFound = blockAtPos(entryPoint))
@@ -61,6 +86,7 @@ public:
 				return;
 			}
 
+			// New block
 			auto block = new MemoryBlock(entryPoint);
 			block.type = BlockType.code;
 			memoryMap.blocks ~= block;
@@ -70,7 +96,6 @@ public:
 
 			ushort pointer = entryPoint;
 			Instruction instr;
-
 			bool inCondition = false;
 
 			while (pointer >= entryPoint)
@@ -84,6 +109,7 @@ public:
 					return;
 				}
 
+				// Get instruction at pointer
 				instr = fetchAt(*_dcpu, pointer);
 
 				void onBlockEnd()
@@ -94,6 +120,8 @@ public:
 						block.position, block.position+block.length-1);
 				}
 
+				// Check instruction
+				// If SET PC, literal that it is jump
 				if (instr.operands == 2 && instr.operandB == 0x1c/*PC*/)
 				{
 					// Unconditional branching 
@@ -105,8 +133,11 @@ public:
 							ushort transitionTo = getOperandA(*_dcpu, instr.operandA, pc, sp).get();
 
 							// outcoming transition
-							auto newTransition = new Transition(pointer, transitionTo,
-								TransitionType.jump, inCondition, block);
+							auto newTransition = new Transition(pointer,
+								labelAt(transitionTo, LabelType.label),
+								TransitionType.jump,
+								inCondition,
+								block);
 							
 							block.transitionsFrom ~= newTransition;
 							processQueue ~= newTransition;
@@ -121,6 +152,7 @@ public:
 						}
 					}
 				}
+				// If JSR that it is call
 				else if (instr.operands == 1 && isOperandImmediate[instr.operandA])
 				{
 					if (instr.opcode == JSR)
@@ -129,8 +161,11 @@ public:
 						ushort transitionTo = getOperandA(*_dcpu, instr.operandA, pc, sp).get();
 
 						// outcoming transition
-						auto newTransition = new Transition(pointer, transitionTo,
-							TransitionType.call, inCondition, block);
+						auto newTransition = new Transition(pointer,
+							labelAt(transitionTo, LabelType.subroutine),
+							TransitionType.call,
+							inCondition,
+							block);
 						
 						block.transitionsFrom ~= newTransition;
 						processQueue ~= newTransition;
@@ -144,8 +179,11 @@ public:
 						ushort transitionTo = getOperandA(*_dcpu, instr.operandA, pc, sp).get();
 
 						// outcoming transition. Indirect
-						auto newTransition = new Transition(pointer, transitionTo,
-							TransitionType.interrupt, inCondition, block);
+						auto newTransition = new Transition(pointer,
+							labelAt(transitionTo, LabelType.int_handler),
+							TransitionType.intHandler,
+							inCondition,
+							block);
 						
 						block.transitionsFrom ~= newTransition;
 						processQueue ~= newTransition;
@@ -174,25 +212,98 @@ public:
 			memoryMap.transitions ~= trans;
 
 			processQueue.shrinkTo(processQueue.data.length-1);
+			
+			if (trans.target.position == trans.from && trans.type != TransitionType.entry)
+			{
+				trans.target.type = LabelType.crash;
+			}
 
-			processEntryPoint(trans);
+			processTransition(trans);
 		}
 
 		// sort blocks and transitions.
-		memoryMap.transitions.sort!"a.to < b.to";
+		memoryMap.transitions.sort!"a.from < b.from";
 		memoryMap.blocks.sort!"a.position < b.position";
+		memoryMap.labels.sort!"a.position < b.position";
 
-		uint[TransitionType.max+1] transitionTypeCounters;
 		foreach(i, transition; memoryMap.transitions)
 		{
 			transition.index = i;
-			transition.typeIndex = transitionTypeCounters[transition.type]++;
 		}
 
 		foreach(i, block; memoryMap.blocks)
 		{
 			block.index = i;
 		}
+
+		uint[LabelType.max+1] labelCounters;
+		Label*[][LabelType.max+1] typeLabels; // labels of the same type;
+		
+		foreach(label; memoryMap.labels)
+		{
+			label.index = labelCounters[label.type]++;
+			typeLabels[label.type] ~= label;
+			writeln(*label);
+		}
+
+		foreach(labelArray; typeLabels)
+		{
+			foreach(label; labelArray)
+			{
+				label.typeCount = labelArray.length;
+			}
+		}
+	}
+}
+
+
+enum TransitionType
+{
+	call,
+	jump,
+	intHandler,
+	entry
+}
+
+struct Transition
+{
+	ushort from;
+	Label* target;
+	TransitionType type;
+	bool conditional;
+	MemoryBlock* fromBlock;
+	MemoryBlock* toBlock;
+	size_t index; // index in transition list of specific type.
+
+	string toString()
+	{
+		return format("Transition %04x -> %04x %s from %04x to %04x",
+			from, target.position, type, fromBlock ? fromBlock.position : 0, toBlock ? toBlock.position : 0);
+	}
+}
+
+enum LabelType
+{
+	subroutine,
+	crash,
+	label,
+	int_handler,
+	start
+}
+
+struct Label
+{
+	ushort position;
+	LabelType type;
+	size_t index;
+	size_t typeCount; // Count of labels of the same type
+
+	string toString()
+	{
+		if (typeCount == 1)
+			return to!string(type);
+		
+		return format("%s_%s", type, index);
 	}
 }
 
@@ -201,32 +312,6 @@ enum BlockType
 	data,
 	code,
 	empty
-}
-
-enum TransitionType
-{
-	call,
-	jump,
-	interrupt
-}
-
-struct Transition
-{
-	ushort from;
-	ushort to;
-	TransitionType type;
-	bool conditional;
-	MemoryBlock* fromBlock;
-	MemoryBlock* toBlock;
-	size_t index; // index in transition list. Used for setting labels
-	size_t typeIndex; // index in transition list of specific type.
-
-	string toString()
-	{
-		return format("Transition %04x -> %04x %s from %04x to %04x",
-			from, to, type, fromBlock ? fromBlock.position : 0, toBlock ? toBlock.position : 0);
-	}
-
 }
 
 struct MemoryBlock
@@ -248,5 +333,6 @@ struct MemoryBlock
 struct MemoryMap
 {
 	Transition*[] transitions;
+	Label*[] labels;
 	MemoryBlock*[] blocks;
 }
