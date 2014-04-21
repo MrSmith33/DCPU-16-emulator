@@ -6,8 +6,10 @@ Authors: Andrey Penechko.
 
 module dcpu.disassembler;
 
+import std.algorithm : joiner;
+import std.conv : to;
 import std.string : format;
-import std.conv;
+import std.range : repeat;
 
 import dcpu.constants;
 import dcpu.dcpuinstruction;
@@ -29,8 +31,16 @@ string[] disassembleSome(ushort[] memory, MemoryMap memMap, ushort location = 0,
 	}
 
 	string[] lines;
+
 	ushort prevInstr = 0;
-	string indent = "";
+
+	uint indentLevel;
+	uint conditionIndentLevel;
+
+	auto indent()
+	{
+		return indentStr.repeat(indentLevel + conditionIndentLevel).joiner;
+	}
 
 	void processInstr()
 	{
@@ -38,8 +48,6 @@ string[] disassembleSome(ushort[] memory, MemoryMap memMap, ushort location = 0,
 
 		uint address = pointer;
 		ushort instr = memory[pointer++];
-
-		
 
 		string literalDecoder(ushort literal)
 		{
@@ -61,17 +69,23 @@ string[] disassembleSome(ushort[] memory, MemoryMap memMap, ushort location = 0,
 			{
 				lines ~= "";
 				lines ~= format("%s:", *labels[0]);
+
+				indentLevel = 1;
 			}
 		}
 
 		if (instr == 0)
 		{
 			prevInstr = 0;
-			indent = "";
+			indentLevel = 0;
+			conditionIndentLevel = 0;
 			return;
 		}
 
-		if (prevInstr >= 0x10 && prevInstr <= 0x17) indent ~= indentStr;
+		if (prevInstr >= 0x10 && prevInstr <= 0x17)
+		{
+			++conditionIndentLevel;
+		}
 
 		if ((instr & 0x1F) != 0)
 		{
@@ -88,17 +102,20 @@ string[] disassembleSome(ushort[] memory, MemoryMap memMap, ushort location = 0,
 				indent,
 				specialOpcodeNames[(instr >> 5) & 0x1F],
 				decodeOperand!true(instr >> 10, nextWord(), &literalDecoder));
+			
 			prevInstr = 0;
-			indent = "";
 		}
 		else
 		{
 			instrStr = format("%s%#02x %#02x, %#02x", indent, instr & 0x1F, (instr >> 5) & 0x1F, instr >> 10);
+			
 			prevInstr = 0;
-			indent = "";
 		}
 
-		if (prevInstr < 0x10 || prevInstr > 0x17) indent = "";
+		if (prevInstr < 0x10 || prevInstr > 0x17)
+		{
+			conditionIndentLevel = 0;
+		}
 
 		lines ~= instrStr;
 		++numInstructions;
