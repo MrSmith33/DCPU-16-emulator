@@ -6,9 +6,11 @@ Authors: Andrey Penechko.
 
 module application;
 
+import std.file : read, write, exists;
+import std.path : setExtension;
+import std.range;
 import std.stdio : writeln;
 import std.string : format;
-import std.file : read, write, exists;
 
 import anchovy.core.input;
 
@@ -124,6 +126,18 @@ class EmulatorApplication : Application!GlfwWindow
 		});
 		monitorWidget.setProperty!"isFocusable"(true);
 
+		auto unstepButton = context.getWidgetById("unstep");
+		unstepButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){unstep(1); return true;});
+		
+		auto unstep10Button = context.getWidgetById("unstep10");
+		unstep10Button.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){unstep(10); return true;});
+		
+		auto unstep100Button = context.getWidgetById("unstep100");
+		unstep100Button.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){unstep(100); return true;});
+		
+		auto unstep1000Button = context.getWidgetById("unstep1000");
+		unstep1000Button.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){unstep(1000); return true;});
+
 		auto stepButton = context.getWidgetById("step");
 		stepButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){step(); return true;});
 
@@ -132,6 +146,9 @@ class EmulatorApplication : Application!GlfwWindow
 		
 		auto stepButton100 = context.getWidgetById("step100");
 		stepButton100.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){emulator.stepInstructions(100); printRegisters(); return true;});
+		
+		auto stepButton1000 = context.getWidgetById("step1000");
+		stepButton1000.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){emulator.stepInstructions(1000); printRegisters(); return true;});
 		
 		runButton = context.getWidgetById("run");
 		runButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){runPause(); return true;});
@@ -184,7 +201,17 @@ class EmulatorApplication : Application!GlfwWindow
 	void step()
 	{
 		if (emulator.dcpu.isRunning) return;
+		writeln("step");
 		emulator.step();
+		printRegisters();
+		memoryList.listChangedSignal.emit();
+	}
+
+	void unstep(ulong frames)
+	{
+		if (emulator.dcpu.isRunning) return;
+		writeln("unstep");
+		emulator.unstep(frames);
 		printRegisters();
 		memoryList.listChangedSignal.emit();
 	}
@@ -208,29 +235,12 @@ class EmulatorApplication : Application!GlfwWindow
 	{
 		memAnalyzer.buildMemoryMap();
 
-		writeln("\nBlocks");
-		foreach(block; memAnalyzer.memoryMap.blocks)
-		{
-			writefln("    %s",*block);
-		}
+		auto file = File(file.setExtension("dis.asm"), "w");
 
-		writeln("\nTransitions");
-		foreach(transition; memAnalyzer.memoryMap.transitions)
-		{
-			writefln("    %s",*transition);
-		}
-
-		writeln("\nLabels");
-		foreach(label; memAnalyzer.memoryMap.labels)
-		{
-			writefln("    %s",*label);
-		}
-
-		writeln("\nDisassembly");
-		foreach(line; disassembleSome(emulator.dcpu.mem.memory, memAnalyzer.memoryMap, 0, 0))
-		{
-			writefln("%s",line);
-		}
+		file.lockingTextWriter.put(
+		disassembleSome(emulator.dcpu.mem.memory, memAnalyzer.memoryMap, 0, 0)
+			.joiner("\n").array
+		);
 	}
 
 	void printRegisters()

@@ -6,7 +6,9 @@ Authors: Andrey Penechko.
 
 module dcpu.dcpuinstruction;
 
+import std.conv : to;
 import std.string : format;
+
 import dcpu.constants;
 
 struct Instruction
@@ -177,15 +179,17 @@ body
 
 alias LiteralDecoder = string delegate(ushort);
 
-/*LiteralDecoder plainLitDecoder = delegate string(ushort literal)
-{
-	return format("%#04x", literal);
-};*/
+string delegate(ushort) plainLitDecoder;
 
-string decodeOperand(bool isA)(ushort operand, lazy ushort nextWord, LiteralDecoder literalDecoder = delegate string(ushort literal)
+static this()
 {
-	return format("%#04x", literal);
-})
+	plainLitDecoder = delegate string(ushort literal)
+	{
+		return literal > 15 ? format("%#04x", literal) : to!string(literal);
+	};
+}
+
+string decodeOperand(bool isA)(ushort operand, lazy ushort nextWord, LiteralDecoder literalDecoder = plainLitDecoder)
 {
 	switch(operand)
 	{

@@ -125,7 +125,7 @@ public:
 				if (instr.operands == 2 && instr.operandB == 0x1c/*PC*/)
 				{
 					// Unconditional branching 
-					if (instr.opcode == SET) // temp TODO: add, sub with literals
+					if (instr.opcode == SET || instr.opcode == STI || instr.opcode == STD) // temp TODO: add, sub with literals
 					{
 						if (isOperandImmediate[instr.operandA])
 						{

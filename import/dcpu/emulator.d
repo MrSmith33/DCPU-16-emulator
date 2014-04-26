@@ -27,6 +27,11 @@ public class Emulator(CpuType)
 	CpuType dcpu; /// data storage: memory, registers.
 	EmulationStatistics stats;
 
+	this()
+	{
+		dcpu.initialize();
+	}
+
 	void attachDevice(IDevice!CpuType device)
 	{
 		dcpu.attachDevice(device);
@@ -37,7 +42,7 @@ public class Emulator(CpuType)
 	{
 		ushort size = binary.length & 0xFFFF;
 
-		dcpu.mem[0..size] = binary[0..size];
+		dcpu.mem.observableArray[0..size*2] = cast(ubyte[])binary[0..size];
 	}
 
 	/// Performs next instruction
@@ -72,6 +77,16 @@ public class Emulator(CpuType)
 		foreach(IUndoable device; dcpu.devices.values)
 		{
 			device.commitFrame(dcpu.regs.instructions);
+		}
+	}
+
+	void unstep(ulong frames)
+	{
+		dcpu.regs.observer.undoFrames(frames);
+		dcpu.mem.observer.undoFrames(frames);
+		foreach(IUndoable device; dcpu.devices.values)
+		{
+			device.undoFrames(frames);
 		}
 	}
 

@@ -53,6 +53,12 @@ struct DebugDcpu
 {
 	//alias Cpu = typeof(this);
 
+	void initialize()
+	{
+		regs.initialize();
+		mem.initialize();
+	}
+
 	auto regs = ObservableRegisters!(DcpuRegisters, 2)(0);
 
 	auto mem = ObservableMemory!(ushort[0x10000], 2)(0);

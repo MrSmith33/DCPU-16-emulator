@@ -59,7 +59,7 @@ string[] disassembleSome(ushort[] memory, MemoryMap memMap, ushort location = 0,
 				}
 			}
 
-			return format("%#04x", literal);
+			return plainLitDecoder(literal);
 		}
 
 		// Place label if there is at current position
@@ -68,7 +68,7 @@ string[] disassembleSome(ushort[] memory, MemoryMap memMap, ushort location = 0,
 			if (labels.length)
 			{
 				lines ~= "";
-				lines ~= format("%s:", *labels[0]);
+				lines ~= format("%04x  %s:", address, *labels[0]);
 
 				indentLevel = 1;
 			}
@@ -92,13 +92,13 @@ string[] disassembleSome(ushort[] memory, MemoryMap memMap, ushort location = 0,
 			string a = decodeOperand!true(instr >> 10, nextWord(), &literalDecoder);
 			string b = decodeOperand!false((instr >> 5) & 0x1F, nextWord(), &literalDecoder);
 			
-			instrStr = format("%s%s  %s, %s", indent, basicOpcodeNames[instr & 0x1F], b, a);
+			instrStr = format("%04x  %s%s  %s, %s", address, indent, basicOpcodeNames[instr & 0x1F], b, a);
 
 			prevInstr = instr & 0x1F;
 		}
 		else if (((instr >> 5) & 0x1F) != 0)
 		{
-			instrStr = format("%s%s  %s",
+			instrStr = format("%04x  %s%s  %s", address,
 				indent,
 				specialOpcodeNames[(instr >> 5) & 0x1F],
 				decodeOperand!true(instr >> 10, nextWord(), &literalDecoder));
@@ -107,7 +107,7 @@ string[] disassembleSome(ushort[] memory, MemoryMap memMap, ushort location = 0,
 		}
 		else
 		{
-			instrStr = format("%s%#02x %#02x, %#02x", indent, instr & 0x1F, (instr >> 5) & 0x1F, instr >> 10);
+			instrStr = format("%04x  %s%#02x %#02x, %#02x", address, indent, instr & 0x1F, (instr >> 5) & 0x1F, instr >> 10);
 			
 			prevInstr = 0;
 		}

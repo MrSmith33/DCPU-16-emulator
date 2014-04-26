@@ -16,6 +16,8 @@ version(debug_observer) import std.stdio;
 import std.string : format;
 import dcpu.groupsequence;
 
+@trusted:
+
 template addressSpaceType(ubyte addressSpaceBytes)
 {
 	static if (addressSpaceBytes == 1)
@@ -32,9 +34,10 @@ struct UndoObserver(ubyte addressSpaceBytes)
 {
 	ubyte[] observableArray;
 
-	this(ubyte[] observableArray)
+	this(ubyte[] _observableArray)
 	{
-		this.observableArray = observableArray;
+		this.observableArray = _observableArray;
+		undoStack = appender!(ubyte[]);
 	}
 
 	enum maxUndoSeqLength = 128;
@@ -97,21 +100,21 @@ struct UndoObserver(ubyte addressSpaceBytes)
 			}
 		}
 
-		version(debug_observer) writefln("Undo stack %s\n", undoStack.data);
+		version(debug_observer) writefln("Undo stack %s\n%s", undoStack.data, frameUndoMap);
 
 		discardFrame();
 	}
 
 	private void addUndoAction(size_t pos, ubyte[] data)
 	{
-		version(debug_observer) writefln("change to %s at %s", data, pos);
+		version(debug_observer) writefln("change to %s at %s array %s", data, pos, observableArray.ptr);
 		assert((pos + data.length - 1) < observableArray.length);
 
 		foreach(index; pos..pos + data.length)
 		{
 			if (index !in frameUndoMap && observableArray[index] != data[index - pos])
 			{
-				//version(debug_observer) writefln("Registered change [%s] %s -> %s", index, observableArray[index], data[index - pos]);
+				version(debug_observer) writefln("Registered change [%s] %s -> %s", index, observableArray[index], data[index - pos]);
 				frameUndoMap[index] = observableArray[index];
 			}
 		}
@@ -147,7 +150,7 @@ struct UndoObserver(ubyte addressSpaceBytes)
 
 				// extract undo data
 				auto undoData = undoStack.data[$ - (5 + length)..$ - 5];
-				version(debug_observer) writefln("UndoPack [%s..%s] %s l%s %s at [%s]\n", stackSize - (5 + length), stackSize - 5, undoStack.data[$-5..$], stackSize, undoData, position);
+				//version(debug_observer) writefln("UndoPack [%s..%s] %s l%s %s at [%s]\n", stackSize - (5 + length), stackSize - 5, undoStack.data[$-5..$], stackSize, undoData, position);
 				// Make undo
 				observableArray[position..position+undoData.length] = undoData;
 
@@ -180,6 +183,10 @@ struct ObservableRegisters(R, ubyte addressSpaceBytes)
 	this(ubyte a)
 	{
 		observableArray[] = 0;
+	}
+
+	void initialize()
+	{
 		observer = UndoObserver!addressSpaceBytes(observableArray[]);
 	}
 
@@ -192,7 +199,7 @@ struct ObservableRegisters(R, ubyte addressSpaceBytes)
 
 		if (value == newValue) return value;
 
-		version(debug_observer) writefln("before change %s", observableArray);
+		version(debug_observer) writefln("before change %s %s", observableArray, observableArray.ptr);
 
 		observer.addUndoAction(
 			__traits(getMember, registers, member).offsetof,
@@ -256,6 +263,10 @@ struct ObservableMemory(M, ubyte addressSpaceBytes)
 	this(ubyte a)
 	{
 		observableArray[] = 0;
+	}
+
+	void initialize()
+	{
 		observer = UndoObserver!addressSpaceBytes(observableArray[]);
 	}
 
