@@ -183,6 +183,11 @@ public:
 		regs.discardUndoStack();
 	}
 
+	override size_t undoStackSize() @property
+	{
+		return regs.undoStackSize;
+	}
+
 protected:
 
 	void repaintScreen()

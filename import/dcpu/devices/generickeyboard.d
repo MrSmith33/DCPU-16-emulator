@@ -196,6 +196,11 @@ public:
 		
 	}
 
+	override size_t undoStackSize() @property
+	{
+		return 0;
+	}
+
 protected:
 	void reset()
 	{

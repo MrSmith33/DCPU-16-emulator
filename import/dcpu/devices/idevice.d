@@ -42,6 +42,7 @@ abstract class IDevice(Cpu) : IUndoable
 	abstract void discardFrame();
 	abstract void undoFrames(ulong numFrames);
 	abstract void discardUndoStack();
+	abstract size_t undoStackSize() @property;
 }
 
 interface IUndoable
@@ -50,4 +51,5 @@ interface IUndoable
 	void discardFrame();
 	void undoFrames(ulong numFrames);
 	void discardUndoStack();
+	size_t undoStackSize() @property;
 }

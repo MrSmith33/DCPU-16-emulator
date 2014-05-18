@@ -53,6 +53,7 @@ struct EmulationStatistics
 		writefln("Avg   : %10.4s |                       |  3w instr : %9s",
 			cast(double)cyclesDone / totalInstrDone, sizesOfDoneInstrs[3]);
 		writefln("------------------------------- Instruction info -------------------------------");
+		
 		uint inRow = 0;
 		foreach(opcode; 0..32)
 		{

@@ -46,12 +46,12 @@ mixin template UndoHelper()
 							.filter!(a => frameUndoMap[a] != observableArray[a])
 							.groupSequence!"b-a == 1"; //[0] position, [1] count
 
-		undoStack.append!ubyte(0); // Frame bottom;
+		undoStack.append!ubyte(0); // Frame separator;
 
 		foreach(changeGroup; changeGroups)
 		{
 			auto position = changeGroup[0];
-			version(debug_observer) writeln(position);
+
 			size_t len = changeGroup[1];
 
 			if (len <= maxUndoSeqLength)
@@ -74,28 +74,26 @@ mixin template UndoHelper()
 					undoStack.append!ubyte(cast(ubyte)numElementsToAdd);
 
 					undoElements.popFrontN(numElementsToAdd);
-					version(debug_observer) writefln("Add undo pack [%s] len(%s) %s\n", position, numElementsToAdd, undoElements.length);
 
 					position += numElementsToAdd;
 				}
 			}
 		}
 
-		version(debug_observer) writefln("Undo stack %s\n%s", undoStack.data, frameUndoMap);
-
 		discardFrame();
 	}
 
 	private void addUndoAction(size_t pos, ubyte[] data)
+	in
 	{
-		version(debug_observer) writefln("change to %s at %s array %s", data, pos, observableArray.ptr);
 		assert((pos + data.length - 1) < observableArray.length);
-
+	}
+	body
+	{
 		foreach(index; pos..pos + data.length)
 		{
 			if (index !in frameUndoMap && observableArray[index] != data[index - pos])
 			{
-				version(debug_observer) writefln("Registered change [%s] %s -> %s", index, observableArray[index], data[index - pos]);
 				frameUndoMap[index] = observableArray[index];
 			}
 		}
@@ -108,42 +106,44 @@ mixin template UndoHelper()
 
 	void undoFrames(ulong numFrames = 1)
 	{
-		auto stackSize = undoStack.data.length;
 		ulong framesUndone = 0;
 
-		while(stackSize > 0 && framesUndone < numFrames)
+		while(undoStackSize > 0 && framesUndone < numFrames)
 		{
-			while(stackSize > 0)
+			while(undoStackSize > 0)
 			{
 				// extract undo data length
-				ubyte length = undoStack.data.peek!ubyte(stackSize - 1);
+				ubyte length = undoStack.data.peek!ubyte(undoStackSize - 1);
 
 				// frame end found
 				if (length == 0)
 				{
-					undoStack.shrinkTo(stackSize - 1);
-					--stackSize;
+					undoStack.shrinkTo(undoStackSize - 1);
 					break;
 				}
 
 				// extract target positon
-				size_t position = undoStack.data.peek!uint(stackSize - 5);
+				size_t position = undoStack.data.peek!uint(undoStackSize - 5);
 
 				// extract undo data
 				auto undoData = undoStack.data[$ - (5 + length)..$ - 5];
-				//version(debug_observer) writefln("UndoPack [%s..%s] %s l%s %s at [%s]\n", stackSize - (5 + length), stackSize - 5, undoStack.data[$-5..$], stackSize, undoData, position);
+
 				// Make undo
-				observableArray[position..position+undoData.length] = undoData;
+				observableArray[position..position + undoData.length] = undoData;
 
 				// Shrink undo stack
 				auto shrinkDelta = ubyte.sizeof + uint.sizeof + length;
-				undoStack.shrinkTo(stackSize - shrinkDelta);
-				stackSize -= shrinkDelta;
+				undoStack.shrinkTo(undoStackSize - shrinkDelta);
 			}
 
 			++framesUndone;
 			version(debug_observer) writefln("Undo stack %s\n", undoStack.data);
 		}
+	}
+
+	size_t undoStackSize() @property
+	{
+		return undoStack.data.length;
 	}
 }
 

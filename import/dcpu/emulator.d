@@ -99,6 +99,25 @@ public class Emulator(CpuType)
 		return dcpu.regs.cycles - initialCycles;
 	}
 
+	// Tries to undo cyclesToStep cycles of dcpu.
+	// Returns actual cycles undone.
+	ulong unstepCycles(ulong cyclesToStep)
+	{
+		ulong initialCycles = dcpu.regs.cycles;
+
+		while(initialCycles - dcpu.regs.cycles < cyclesToStep && dcpu.regs.cycles > 0)
+		{
+			unstep(1);
+		}
+
+		if (dcpu.regs.cycles == 0)
+		{
+			dcpu.isRunning = false;
+		}
+
+		return initialCycles - dcpu.regs.cycles;
+	}
+
 	// Steps instructionsToStep instructions.
 	void stepInstructions(ulong instructionsToStep)
 	{
@@ -113,5 +132,19 @@ public class Emulator(CpuType)
 	{
 		dcpu.reset();
 		stats.reset();
+	}
+
+	size_t undoStackSize() @property
+	{
+		size_t result;
+
+		result += dcpu.regs.undoStackSize;
+		result += dcpu.mem.undoStackSize;
+		foreach(IUndoable device; dcpu.devices.values)
+		{
+			result += device.undoStackSize;
+		}
+
+		return result;
 	}
 }
