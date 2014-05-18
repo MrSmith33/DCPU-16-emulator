@@ -137,6 +137,11 @@ public class Emulator(CpuType)
 	/// Resets dcpu state and interpreter state to their initial state.
 	void reset()
 	{
+		foreach(IUndoable device; dcpu.devices.values)
+		{
+			device.discardUndoStack();
+			device.discardFrame();
+		}
 		dcpu.reset();
 		stats.reset();
 	}
