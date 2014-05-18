@@ -29,6 +29,17 @@ struct EmulationStatistics
 		++sizesOfDoneInstrs[instr.size];
 	}
 
+	void onInstructionUndone(ref const Instruction instr, ulong cycles)
+	{			
+		cyclesDone -= cycles;
+		--totalInstrDone;
+		if (instr.operands == 2) --basicDoneTimes[instr.opcode];
+		else if (instr.operands == 1) --specialDoneTimes[instr.opcode];
+		
+		--numOperandsDone[instr.operands];
+		--sizesOfDoneInstrs[instr.size];
+	}
+
 	void reset()
 	{
 		totalInstrDone = 0;

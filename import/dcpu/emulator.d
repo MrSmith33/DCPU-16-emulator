@@ -77,12 +77,19 @@ public class Emulator(CpuType)
 
 	void unstep(ulong frames)
 	{
+		ulong initialCycles = dcpu.regs.cycles;
+
+		// Undo
 		dcpu.regs.undoFrames(frames);
 		dcpu.mem.undoFrames(frames);
 		foreach(IUndoable device; dcpu.devices.values)
 		{
 			device.undoFrames(frames);
 		}
+
+		// Update statistics
+		Instruction instr = dcpu.fetchNext();
+		stats.onInstructionUndone(instr, initialCycles - dcpu.regs.cycles);
 	}
 
 	// Tries to do cyclesToStep cycles of dcpu.
