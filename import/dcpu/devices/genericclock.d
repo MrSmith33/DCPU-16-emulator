@@ -14,6 +14,7 @@ import anchovy.graphics.bitmap;
 import dcpu.devices.idevice;
 import dcpu.emulator;
 import dcpu.dcpu;
+import dcpu.undoproxy;
 
 @trusted nothrow:
 
@@ -22,16 +23,22 @@ import dcpu.dcpu;
  + See 'docs/generic clock.txt' for specification.
  +/
 
-class GenericClock(Cpu) : IDevice!Cpu
+private struct ClockRegisters
 {
-protected:
-	Cpu* _dcpu;
-	Emulator!Cpu _emulator;
 	ulong initialCycles;
 	ushort ticks;
 	ushort divider;
 	ulong tickPeriod;
 	ushort interruptMessage;
+}
+
+class GenericClock(Cpu) : IDevice!Cpu
+{
+protected:
+	Cpu* _dcpu;
+	Emulator!Cpu _emulator;
+
+	UndoableStruct!(ClockRegisters, ushort) regs;
 
 public:
 	/// Saves dcpu reference internally for future use.
@@ -40,10 +47,10 @@ public:
 		_emulator = emulator;
 		_dcpu = &emulator.dcpu;
 
-		ticks = 0;
-		divider = 0;
-		tickPeriod = 0;
-		interruptMessage = 0;
+		regs.ticks = 0;
+		regs.divider = 0;
+		regs.tickPeriod = 0;
+		regs.interruptMessage = 0;
 	}
 
 	/// Handles hardware interrupt and returns a number of cycles.
@@ -56,26 +63,26 @@ public:
 		switch(aRegister)
 		{
 			case 0:
-				if (divider != 0)
+				if (regs.divider != 0)
 				{
 					_dcpu.updateQueue.removeQueries(this);
 				}
 
-				divider = bRegister;
+				regs.divider = bRegister;
 
-				if (divider != 0)
+				if (regs.divider != 0)
 				{
-					tickPeriod = cast(ulong)(_dcpu.clockSpeed / (60.0 / divider));
-					_dcpu.updateQueue.addQuery(this, tickPeriod, 0);
+					regs.tickPeriod = cast(ulong)(_dcpu.clockSpeed / (60.0 / regs.divider));
+					_dcpu.updateQueue.addQuery(this, regs.tickPeriod, 0);
 				}
-				ticks = 0;
-				initialCycles = _dcpu.regs.cycles;
+				regs.ticks = 0;
+				regs.initialCycles = _dcpu.regs.cycles;
 				return 0;
 			case 1:
-				_dcpu.regs.b = ticks;
+				_dcpu.regs.b = regs.ticks;
 				return 0;
 			case 2:
-				interruptMessage = bRegister;
+				regs.interruptMessage = bRegister;
 				return 0;
 			default:
 				break;
@@ -95,21 +102,21 @@ public:
 	/// If set to non-zero will be called after delay cycles elapsed with provided message.
 	override void handleUpdateQuery(ref size_t message, ref ulong delay)
 	{
-		ulong diff = _dcpu.regs.cycles - initialCycles;
-		ulong totalTicks = diff / tickPeriod;
-		if (totalTicks > ticks)
+		ulong diff = _dcpu.regs.cycles - regs.initialCycles;
+		ulong totalTicks = diff / regs.tickPeriod;
+		if (totalTicks > regs.ticks)
 		{
-			foreach(i; 0..totalTicks-ticks)
+			foreach(i; 0..totalTicks - regs.ticks)
 			{
-				++ticks;
-				if (interruptMessage > 0)
+				regs.inc!"ticks";
+				if (regs.interruptMessage > 0)
 				{
-					triggerInterrupt(_emulator.dcpu, interruptMessage);
+					triggerInterrupt(_emulator.dcpu, regs.interruptMessage);
 				}
 			}
 		}
 
-		delay = tickPeriod;
+		delay = regs.tickPeriod;
 	}
 
 	/// Returns: 32 bit word identifying the hardware id.
@@ -132,21 +139,21 @@ public:
 
 	override void commitFrame(ulong frameNumber)
 	{
-		
+		regs.commitFrame(frameNumber);
 	}
 
 	override void discardFrame()
 	{
-
+		regs.discardFrame();
 	}
 
 	override void undoFrames(ulong numFrames)
 	{
-
+		regs.undoFrames(numFrames);
 	}
 
 	override void discardUndoStack()
 	{
-		
+		regs.discardUndoStack();
 	}
 }

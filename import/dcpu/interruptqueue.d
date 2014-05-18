@@ -44,6 +44,20 @@ struct InterruptQueue
 	/// Dequeue item from queue.
 	///
 	/// Size must be checked
+	ushort popBack()
+	in
+	{
+		assert(size > 0);
+	}
+	body
+	{
+		--size;
+		return buffer[lastPos--];
+	}
+
+	/// Dequeue item from queue.
+	///
+	/// Size must be checked
 	ushort popFront()
 	in
 	{
@@ -59,20 +73,6 @@ struct InterruptQueue
 	{
 		buffer[--firstPos] = element;
 		++size;
-	}
-
-	/// Dequeue item from queue.
-	///
-	/// Size must be checked
-	ushort popBack()
-	in
-	{
-		assert(size > 0);
-	}
-	body
-	{
-		--size;
-		return buffer[lastPos--];
 	}
 
 	void clear() nothrow

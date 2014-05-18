@@ -24,7 +24,7 @@ import dcpu.undoproxy;
  + See 'docs/LEM1802 monitor.txt' for specification.
  +/
 
-struct Lem1802Registers
+private struct Lem1802Registers
 {
 	ushort fontAddress;
 	ushort videoAddress;
