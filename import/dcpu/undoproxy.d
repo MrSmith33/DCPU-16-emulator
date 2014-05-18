@@ -164,10 +164,7 @@ struct UndoableStruct(Struct, ArrayElement)
 		discardUndoStack();
 	}
 
-	alias inc(member, T) = opMemberAssign!(member, "+", T);
-	alias dec(member, T) = opMemberAssign!(member, "-", T);
-
-	auto opMemberAssign(string member, string op, T)(T value = 1)
+	auto opMemberAssign(string member, string op, T = ubyte)(T value = 1)
 	{
 		alias Member = typeof(__traits(getMember, data, member));
 
@@ -175,6 +172,9 @@ struct UndoableStruct(Struct, ArrayElement)
 			cast(Member)(mixin("opDispatch!(member)() "~op~" value"))
 		);
 	}
+
+	alias inc(string member) = opMemberAssign!(member, "+");
+	alias dec(string member) = opMemberAssign!(member, "-");
 
 	// setter
 	auto opDispatch(string member, T)(T newValue)
