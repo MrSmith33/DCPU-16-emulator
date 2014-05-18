@@ -10,7 +10,7 @@ module dcpu.dcpu;
 import std.algorithm : fill;
 
 import dcpu.devices.idevice;
-import dcpu.interruptqueue;
+import dcpu.ringbuffer;
 import dcpu.updatequeue;
 import dcpu.undoproxy;
 
@@ -56,7 +56,7 @@ struct Dcpu
 
 	uint clockSpeed = 100_000; //Hz
 
-	InterruptQueue intQueue;
+	RingBuffer!(ushort, 256) intQueue;
 	UpdateQueue!Dcpu* updateQueue;
 	IDevice!Dcpu[ushort] devices;
 	private ushort nextHardwareId = 0;

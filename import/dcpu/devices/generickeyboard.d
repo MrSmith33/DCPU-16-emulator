@@ -56,10 +56,12 @@ public:
 
 		switch(aRegister)
 		{
+			// Clear keyboard buffer
 			case 0:
 				buffer.length = 0;
 				return 0;
 
+			// Get next key from key buffer
 			case 1:
 				if (buffer.length > 0)
 				{
@@ -73,6 +75,7 @@ public:
 				//if (_emulator.dcpu.reg[2])writeln("next key ", _emulator.dcpu.reg[2]);
 				return 0;
 
+			// Is key pressed
 			case 2:
 				if (bRegister <= 0x91)
 					_emulator.dcpu.regs.c = pressedKeys[bRegister];
@@ -81,6 +84,7 @@ public:
 				//writeln("is key pressed ", _emulator.dcpu.reg_c);
 				return 0;
 
+			// Set interrupt message
 			case 3:
 				interruptMessage = bRegister;
 				return 0;
@@ -235,8 +239,8 @@ static immutable ushort[] bareScancodes = [
 // When shift key IS pressed. From 0 to 348
 static immutable ushort[] shiftScancodes = [
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 32, 0, 0, 0, 0, 0, 0, 34, 0, 0, 0, 0, 60, 95, 62, 63, 41, 33, 64, 35,
-36, 37, 94, 38, 42, 40, 0, 58, 0, 43, 0, 0, 0, 65, 66, 67, 68, 69, 70, 71,
+0, 0, 0, 0, 0, 32, 0, 0, 0, 0, 0, 0, 34, 0, 0, 0, 0, 60, 95, 62, 63, 41, 33, 64,
+35, 36, 37, 94, 38, 42, 40, 0, 58, 0, 43, 0, 0, 0, 65, 66, 67, 68, 69, 70, 71,
 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 123,
 124, 125, 0, 0, 126, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
