@@ -14,6 +14,7 @@ import anchovy.graphics.bitmap;
 import dcpu.devices.idevice;
 import dcpu.emulator;
 import dcpu.dcpu;
+import dcpu.undoproxy;
 
 @trusted nothrow:
 
@@ -42,14 +43,7 @@ protected:
 	Cpu* _dcpu;
 	Bitmap _bitmap;
 
-	ushort fontAddress;
-	ushort videoAddress;
-	ushort paletteAddress;
-	ushort borderColor;
-
-	bool blinkPhase;
-	bool enabled = false; 
-	bool splash = false;
+	UndoableStruct!(Lem1802Registers, ushort) regs;
 
 	uint blinkInterval = 70000;
 	uint splashDelay = 1;
@@ -78,12 +72,12 @@ public:
 		_emulator = emulator;
 		_dcpu = &emulator.dcpu;
 		(cast(uint[])_bitmap.data)[] = 0xFF000000;
-		enabled = false;
-		splash = false;
-		fontAddress = 0;
-		videoAddress = 0;
-		paletteAddress = 0;
-		borderColor = 0;
+		regs.enabled = false;
+		regs.splash = false;
+		regs.fontAddress = 0;
+		regs.videoAddress = 0;
+		regs.paletteAddress = 0;
+		regs.borderColor = 0;
 
 		_bitmap.dataChanged.emit();
 	}
@@ -125,7 +119,7 @@ public:
 	/// Can be used to update screens.
 	override void updateFrame()
 	{
-		if (enabled && !splash)
+		if (regs.enabled && !regs.splash)
 		{
 			repaintScreen();
 		}
@@ -138,11 +132,11 @@ public:
 		{
 			message = 1;
 			delay = blinkInterval;
-			splash = false;
+			regs.splash = false;
 		}
 		else if (message == 1)
 		{
-			blinkPhase = !blinkPhase;
+			regs.blinkPhase = !regs.blinkPhase;
 			delay = blinkInterval;
 		}
 		else
@@ -171,35 +165,35 @@ public:
 
 	override void commitFrame(ulong frameNumber)
 	{
-
+		regs.commitFrame(frameNumber);
 	}
 
 	override void discardFrame()
 	{
-
+		regs.discardFrame();
 	}
 
 	override void undoFrames(ulong numFrames)
 	{
-
+		regs.undoFrames(numFrames);
 	}
 
 	override void discardUndoStack()
 	{
-		
+		regs.discardUndoStack();
 	}
 
 protected:
 
 	void repaintScreen()
 	{
-		if (_dcpu is null || videoAddress == 0) return;
+		if (_dcpu is null || regs.videoAddress == 0) return;
 
 		foreach(line; 0..numRows)
 		{
 			foreach(column; 0..numCols)
 			{
-				ushort memoryAddress = (videoAddress + line * numCols + column) & 0xFFFF;
+				ushort memoryAddress = (regs.videoAddress + line * numCols + column) & 0xFFFF;
 				drawChar(_dcpu.mem[memoryAddress], column, line);
 			}
 		}
@@ -217,18 +211,18 @@ protected:
 		uint foreRGB = paletteToRGB8(foreIndex);
 		uint backRGB = paletteToRGB8(backIndex);
 
-		if (blinkBit && blinkPhase)
+		if (blinkBit && regs.blinkPhase)
 		{
 			fillCell(x, y, backRGB);
 		}
-		else if (fontAddress == 0)
+		else if (regs.fontAddress == 0)
 		{
 			drawCell(x, y, foreRGB, backRGB, (cast(uint[])defaultFont)[charIndex]);
 		}
 		else
 		{
-			drawCell(x, y, foreRGB, backRGB, _dcpu.mem[(fontAddress + charIndex*2) & 0xFFFF] |
-					_dcpu.mem[(fontAddress + charIndex*2 + 1) & 0xFFFF] << 16);
+			drawCell(x, y, foreRGB, backRGB, _dcpu.mem[(regs.fontAddress + charIndex*2) & 0xFFFF] |
+					_dcpu.mem[(regs.fontAddress + charIndex*2 + 1) & 0xFFFF] << 16);
 		}
 
 		drawBorder();
@@ -237,13 +231,13 @@ protected:
 	uint paletteToRGB8(ushort colorIndex)
 	{
 		ushort rgb12color;
-		if (paletteAddress == 0)
+		if (regs.paletteAddress == 0)
 		{
 			rgb12color = defaultPalette[colorIndex & 0xF];
 		}
 		else
 		{
-			rgb12color = _dcpu.mem[(paletteAddress + (colorIndex & 0xF)) & 0xFFFF];
+			rgb12color = _dcpu.mem[(regs.paletteAddress + (colorIndex & 0xF)) & 0xFFFF];
 		}
 
 		return ((rgb12color & 0xF) << 16) * 17 +
@@ -294,7 +288,7 @@ protected:
 
 	void drawBorder()
 	{
-		uint borderRgb = paletteToRGB8(borderColor);
+		uint borderRgb = paletteToRGB8(regs.borderColor);
 		uint[] colorData = cast(uint[])_bitmap.data;
 
 		colorData[0..borderSize * screenWidth][] = borderRgb;
@@ -332,10 +326,10 @@ protected:
 
 	void mapScreen(ushort b)
 	{
-		if (b != 0 && videoAddress == 0)
+		if (b != 0 && regs.videoAddress == 0)
 		{
-			splash = true;
-			enabled = true;
+			regs.splash = true;
+			regs.enabled = true;
 
 			drawSplash();
 
@@ -346,25 +340,25 @@ protected:
 			(cast(uint[])_bitmap.data)[] = 0xFF000000;
 			_dcpu.updateQueue.removeQueries(this);
 
-			enabled = false;
+			regs.enabled = false;
 		}
 
-		videoAddress = b;
+		regs.videoAddress = b;
 	}
 
 	void mapFont(ushort b)
 	{
-		fontAddress = b;
+		regs.fontAddress = b;
 	}
 
 	void mapPalette(ushort b)
 	{
-		paletteAddress = b;
+		regs.paletteAddress = b;
 	}
 
 	void setBorderColor(ushort b)
 	{
-		borderColor = b & 0xF;
+		regs.borderColor = b & 0xF;
 	}
 
 	void dumpFont(ushort b)
