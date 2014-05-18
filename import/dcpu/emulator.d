@@ -13,7 +13,7 @@ import std.stdio;
 import dcpu.dcpu;
 static import dcpu.dcpu;
 import dcpu.devices.idevice;
-import dcpu.deviceproxy;
+import dcpu.undoproxy;
 
 public import dcpu.dcpuemulation;
 public import dcpu.dcpuinstruction;
@@ -26,11 +26,6 @@ public class Emulator(CpuType)
 {
 	CpuType dcpu; /// data storage: memory, registers.
 	EmulationStatistics stats;
-
-	this()
-	{
-		dcpu.initialize();
-	}
 
 	void attachDevice(IDevice!CpuType device)
 	{
@@ -71,8 +66,8 @@ public class Emulator(CpuType)
 		dcpu.regs.instructions = dcpu.regs.instructions + 1;
 
 		// Commit changes to undo stack
-		dcpu.regs.observer.commitFrame(dcpu.regs.instructions);
-		dcpu.mem.observer.commitFrame(dcpu.regs.instructions);
+		dcpu.regs.commitFrame(dcpu.regs.instructions);
+		dcpu.mem.commitFrame(dcpu.regs.instructions);
 
 		foreach(IUndoable device; dcpu.devices.values)
 		{
@@ -82,8 +77,8 @@ public class Emulator(CpuType)
 
 	void unstep(ulong frames)
 	{
-		dcpu.regs.observer.undoFrames(frames);
-		dcpu.mem.observer.undoFrames(frames);
+		dcpu.regs.undoFrames(frames);
+		dcpu.mem.undoFrames(frames);
 		foreach(IUndoable device; dcpu.devices.values)
 		{
 			device.undoFrames(frames);
@@ -116,7 +111,7 @@ public class Emulator(CpuType)
 	/// Resets dcpu state and interpreter state to their initial state.
 	void reset()
 	{
-		.reset(dcpu);
+		dcpu.reset();
 		stats.reset();
 	}
 }

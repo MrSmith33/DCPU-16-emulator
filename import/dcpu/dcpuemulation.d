@@ -10,7 +10,7 @@ import std.stdio;
 
 import dcpu.dcpu;
 import dcpu.devices.idevice;
-import dcpu.deviceproxy;
+import dcpu.undoproxy;
 import dcpu.disassembler;
 import dcpu.dcpuinstruction;
 import dcpu.constants;

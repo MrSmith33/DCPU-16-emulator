@@ -12,7 +12,7 @@ import std.algorithm : fill;
 import dcpu.devices.idevice;
 import dcpu.interruptqueue;
 import dcpu.updatequeue;
-import dcpu.deviceproxy;
+import dcpu.undoproxy;
 
 @safe:
 
@@ -49,25 +49,16 @@ struct DcpuMemory
 	ushort[0x10000] mem;
 }
 
-struct DebugDcpu
+struct Dcpu
 {
-	//alias Cpu = typeof(this);
-
-	void initialize()
-	{
-		regs.initialize();
-		mem.initialize();
-	}
-
-	auto regs = ObservableRegisters!(DcpuRegisters, 2)(0);
-
-	auto mem = ObservableMemory!(ushort[0x10000], 2)(0);
+	UndoableStruct!(DcpuRegisters, ushort) regs;
+	UndoableStruct!(DcpuMemory, ushort) mem;
 
 	uint clockSpeed = 100_000; //Hz
 
 	InterruptQueue intQueue;
-	UpdateQueue!DebugDcpu* updateQueue;
-	IDevice!DebugDcpu[ushort] devices;
+	UpdateQueue!Dcpu* updateQueue;
+	IDevice!Dcpu[ushort] devices;
 	private ushort nextHardwareId = 0;
 
 	bool isBurning = false;
@@ -80,80 +71,24 @@ struct DebugDcpu
 		return cast(ushort)devices.length;
 	}
 
-	ushort attachDevice(IDevice!DebugDcpu device) // TODO: checks
+	ushort attachDevice(IDevice!Dcpu device) // TODO: checks
 	{
 		devices[nextHardwareId] = device;
 		return nextHardwareId++;
 	}
-}
 
-/*/// DCPU-16 memory and registers storage.
-struct FastDcpu
-{
-	//alias Cpu = typeof(this);
-
-	uint clockSpeed = 100_000; //Hz
-
-	DcpuRegisters regs;
-
-	ushort[0x10000] mem;
-
-	InterruptQueue intQueue;
-
-	UpdateQueue!FastDcpu* updateQueue;
-	
-	private ushort nextHardwareId = 0;
-	IDevice!FastDcpu[ushort] devices;
-
-	bool isBurning = false;
-	bool isRunning = false;
-
-	ushort numDevices() @property @trusted
+	void reset()
 	{
-		return cast(ushort)devices.length;
-	}
+		regs.reset();
+		mem.reset();
 
-	ushort attachDevice(IDevice!FastDcpu device) // TODO: checks
-	{
-		devices[nextHardwareId] = device;
-		return nextHardwareId++;
+		intQueue.clear();
+
+		devices = null;
+		nextHardwareId = 0;
+
+		isBurning = false;
+		updateQueue.queries = null;
 	}
 }
 
-/// Resets dcpu to its initial state.
-void reset(ref FastDcpu data)
-{
-	data.array[] = 0;
-
-	data.cycles = 0;
-	data.instructions = 0;
-
-	data.queueInterrupts = false;
-	data.intQueue.clear();
-
-
-	data.devices = null;
-	data.nextHardwareId = 0;
-
-	data.isBurning = false;
-
-	fill!(ushort[], ushort)(data.mem, 0u);
-}*/
-
-void reset(ref DebugDcpu dcpu)
-{
-	dcpu.regs.observableArray[] = 0;
-	dcpu.regs.observer.discardUndoStack();
-	dcpu.regs.observer.discardFrame();
-
-	dcpu.intQueue.clear();
-
-	dcpu.devices = null;
-	dcpu.nextHardwareId = 0;
-
-	dcpu.isBurning = false;
-
-	dcpu.mem.observableArray[] = 0;
-	dcpu.mem.observer.discardUndoStack();
-	dcpu.mem.observer.discardFrame();
-}

@@ -41,14 +41,14 @@ class EmulatorApplication : Application!GlfwWindow
 		super(windowSize, caption);
 	}
 
-	Emulator!DebugDcpu emulator;
-	Lem1802!DebugDcpu monitor;
-	GenericClock!DebugDcpu clock;
-	GenericKeyboard!DebugDcpu keyboard;
-	FloppyDrive!DebugDcpu floppyDrive;
+	Emulator!Dcpu emulator;
+	Lem1802!Dcpu monitor;
+	GenericClock!Dcpu clock;
+	GenericKeyboard!Dcpu keyboard;
+	FloppyDrive!Dcpu floppyDrive;
 	Widget registerView;
-	MemoryView!DebugDcpu memoryList;
-	MemoryAnalyzer!DebugDcpu memAnalyzer;
+	MemoryView!Dcpu memoryList;
+	MemoryAnalyzer!Dcpu memAnalyzer;
 
 	bool dcpuRunning = false;
 	Widget runButton;
@@ -76,7 +76,7 @@ class EmulatorApplication : Application!GlfwWindow
 
 	void attachDevices()
 	{
-		emulator.dcpu.updateQueue = new UpdateQueue!DebugDcpu;
+		emulator.dcpu.updateQueue = new UpdateQueue!Dcpu;
 		emulator.attachDevice(monitor);
 		emulator.attachDevice(keyboard);
 		emulator.attachDevice(clock);
@@ -93,13 +93,13 @@ class EmulatorApplication : Application!GlfwWindow
 
 		fpsHelper.limitFps = true;
 
-		emulator = new Emulator!DebugDcpu();
-		monitor = new Lem1802!DebugDcpu;
-		clock = new GenericClock!DebugDcpu;
-		keyboard = new GenericKeyboard!DebugDcpu;
-		floppyDrive = new FloppyDrive!DebugDcpu;
+		emulator = new Emulator!Dcpu();
+		monitor = new Lem1802!Dcpu;
+		clock = new GenericClock!Dcpu;
+		keyboard = new GenericKeyboard!Dcpu;
+		floppyDrive = new FloppyDrive!Dcpu;
 		floppyDrive.floppy = new Floppy;
-		memAnalyzer = new MemoryAnalyzer!DebugDcpu(&emulator.dcpu);
+		memAnalyzer = new MemoryAnalyzer!Dcpu(&emulator.dcpu);
 		attachDevices();
 		
 		emulator.loadProgram(loadBinary(file));
@@ -170,7 +170,7 @@ class EmulatorApplication : Application!GlfwWindow
 		printRegisters();
 
 
-		memoryList = new MemoryView!DebugDcpu(&emulator.dcpu);
+		memoryList = new MemoryView!Dcpu(&emulator.dcpu);
 		auto memoryView = context.getWidgetById("memoryview");
 		memoryView.setProperty!("list", List!dstring)(memoryList);
 		memoryView.setProperty!("sliderPos")(0.0);
@@ -201,7 +201,6 @@ class EmulatorApplication : Application!GlfwWindow
 	void step()
 	{
 		if (emulator.dcpu.isRunning) return;
-		writeln("step");
 		emulator.step();
 		printRegisters();
 		memoryList.listChangedSignal.emit();
@@ -210,7 +209,6 @@ class EmulatorApplication : Application!GlfwWindow
 	void unstep(ulong frames)
 	{
 		if (emulator.dcpu.isRunning) return;
-		writeln("unstep");
 		emulator.unstep(frames);
 		printRegisters();
 		memoryList.listChangedSignal.emit();
@@ -238,7 +236,7 @@ class EmulatorApplication : Application!GlfwWindow
 		auto file = File(file.setExtension("dis.asm"), "w");
 
 		file.lockingTextWriter.put(
-		disassembleSome(emulator.dcpu.mem.memory, memAnalyzer.memoryMap, 0, 0)
+		disassembleSome(cast(ushort[])emulator.dcpu.mem.observableArray[], memAnalyzer.memoryMap, 0, 0)
 			.joiner("\n").array
 		);
 	}

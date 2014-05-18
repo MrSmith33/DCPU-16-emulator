@@ -4,7 +4,7 @@ License: a$(WEB boost.org/LICENSE_1_0.txt, Boost License 1.0).
 Authors: Andrey Penechko.
 */
 
-module dcpu.deviceproxy;
+module dcpu.undoproxy;
 
 //version = debug_observer;
 
@@ -18,28 +18,9 @@ import dcpu.groupsequence;
 
 @trusted:
 
-template addressSpaceType(ubyte addressSpaceBytes)
+/// Needs ubyte[] observableArray; in insertion context to work.
+mixin template UndoHelper()
 {
-	static if (addressSpaceBytes == 1)
-		alias addressSpaceType = ubyte;
-	else static if (addressSpaceBytes == 2)
-		alias addressSpaceType = ushort;
-	else static if (addressSpaceBytes > 2 && addressSpaceBytes < 5)
-		alias addressSpaceType = uint;
-	else static if (addressSpaceBytes > 4)
-		alias addressSpaceType = ulong;
-}
-
-struct UndoObserver(ubyte addressSpaceBytes)
-{
-	ubyte[] observableArray;
-
-	this(ubyte[] _observableArray)
-	{
-		this.observableArray = _observableArray;
-		undoStack = appender!(ubyte[]);
-	}
-
 	enum maxUndoSeqLength = 128;
 
 	// Saves initial value of ubyte at index
@@ -166,57 +147,60 @@ struct UndoObserver(ubyte addressSpaceBytes)
 	}
 }
 
-struct ObservableRegisters(R, ubyte addressSpaceBytes)
+struct UndoableStruct(Struct, ArrayElement)
 {
 	union
 	{
-		R registers;
-		ubyte[R.sizeof] observableArray;
+		Struct data;
+		ubyte[Struct.sizeof] observableArray;
 	}
 
-	UndoObserver!addressSpaceBytes observer;
+	mixin UndoHelper;
 
-	alias ArrayElement = addressSpaceType!(addressSpaceBytes);
-
-	@disable this();
-
-	this(ubyte a)
+	void reset()
 	{
 		observableArray[] = 0;
+		discardFrame();
+		discardUndoStack();
 	}
 
-	void initialize()
+	alias inc(member, T) = opMemberAssign!(member, "+", T);
+	alias dec(member, T) = opMemberAssign!(member, "-", T);
+
+	auto opMemberAssign(string member, string op, T)(T value = 1)
 	{
-		observer = UndoObserver!addressSpaceBytes(observableArray[]);
+		alias Member = typeof(__traits(getMember, data, member));
+
+		return opDispatch!(member)(
+			cast(Member)(mixin("opDispatch!(member)() "~op~" value"))
+		);
 	}
 
 	// setter
-	auto opDispatch(string member)(typeof(__traits(getMember, registers, member)) newValue)
+	auto opDispatch(string member, T)(T newValue)
 	{
-		alias M = typeof(__traits(getMember, registers, member));
+		alias Member = typeof(__traits(getMember, data, member));
 
-		auto value = __traits(getMember, registers, member);
+		auto value = __traits(getMember, data, member);
 
 		if (value == newValue) return value;
 
-		version(debug_observer) writefln("before change %s %s", observableArray, observableArray.ptr);
+		Member newValueCasted = cast(Member)newValue;
 
-		observer.addUndoAction(
-			__traits(getMember, registers, member).offsetof,
-			*(cast(ubyte[M.sizeof]*)&newValue)
+		addUndoAction(
+			__traits(getMember, data, member).offsetof,
+			*(cast(ubyte[Member.sizeof]*)&newValueCasted)
 		);
 
-		__traits(getMember, registers, member) = newValue;
+		__traits(getMember, data, member) = newValueCasted;
 
-		version(debug_observer) writefln("after change %s\n", observableArray);
-
-		return __traits(getMember, registers, member);
+		return __traits(getMember, data, member);
 	}
 
 	// getter
 	auto opDispatch(string member)()
 	{
-		return __traits(getMember, registers, member);//RegisterAccess();
+		return __traits(getMember, data, member);
 	}
 
 	auto opIndex(size_t index)
@@ -225,78 +209,26 @@ struct ObservableRegisters(R, ubyte addressSpaceBytes)
 	}
 
 	void opSliceAssign(ArrayElement[] data, size_t i, size_t j)
+	in
 	{
 		assert(j <= (cast(ArrayElement[])observableArray).length);
 		assert(i < j);
-
 		assert(data.length == j - i, format("Arrays have different sizes %s and %s", data.length, j - i));
-		//version(debug_observer) writefln("before change %s", observableArray);
+	}
+	body
+	{
 
-		observer.addUndoAction(i * ArrayElement.sizeof, cast(ubyte[])data);
+		addUndoAction(i * ArrayElement.sizeof, cast(ubyte[])data);
 
 		(cast(ArrayElement[])observableArray)[i..j] = data;
-		//version(debug_observer) writefln("after change %s\n", observableArray);
 	}
 
 	ArrayElement opIndexAssign(ArrayElement data, size_t index)
 	{
 		assert(index <= (cast(ArrayElement[])observableArray).length);
 
-		observer.addUndoAction(index * ArrayElement.sizeof, *(cast(ubyte[ArrayElement.sizeof]*)&data));
+		addUndoAction(index * ArrayElement.sizeof, *(cast(ubyte[ArrayElement.sizeof]*)&data));
 
 		return (cast(ArrayElement[])observableArray)[index] = data;
-	}
-}
-
-struct ObservableMemory(M, ubyte addressSpaceBytes)
-{
-	union
-	{
-		M memory;
-		ubyte[M.sizeof] observableArray;
-	}
-
-	UndoObserver!addressSpaceBytes observer;
-
-	@disable this();
-
-	this(ubyte a)
-	{
-		observableArray[] = 0;
-	}
-
-	void initialize()
-	{
-		observer = UndoObserver!addressSpaceBytes(observableArray[]);
-	}
-
-	alias Element = ElementType!M;
-
-	void opSliceAssign(Element[] data, size_t i, size_t j)
-	{
-		assert(j <= (cast(Element[])observableArray).length);
-		assert(i < j);
-
-		assert(data.length == j - i, format("Arrays have different sizes %s and %s", data.length, j - i));
-		//version(debug_observer) writefln("before change %s", observableArray);
-
-		observer.addUndoAction(i * Element.sizeof, cast(ubyte[])data);
-
-		(cast(Element[])observableArray)[i..j] = data;
-		//version(debug_observer) writefln("after change %s\n", observableArray);
-	}
-
-	Element opIndexAssign(Element data, size_t index)
-	{
-		assert(index <= (cast(Element[])observableArray).length);
-
-		observer.addUndoAction(index * Element.sizeof, *(cast(ubyte[Element.sizeof]*)&data));
-
-		return (cast(Element[])observableArray)[index] = data;
-	}
-
-	Element opIndex(size_t index)
-	{
-		return (cast(Element[])observableArray)[index];
 	}
 }
