@@ -17,6 +17,7 @@ import anchovy.graphics.bitmap;
 import dcpu.devices.idevice;
 import dcpu.emulator;
 import dcpu.dcpu;
+import dcpu.ringbuffer;
 
 @trusted nothrow:
 
@@ -30,7 +31,8 @@ class GenericKeyboard(Cpu) : IDevice!Cpu
 protected:
 	Emulator!Cpu _emulator;
 	ushort interruptMessage;
-	ushort[] buffer;
+	//ushort[] buffer;
+	RingBuffer!(ushort, 256) buffer;
 	BitArray pressedKeys;
 
 	/// 
@@ -123,7 +125,7 @@ public:
 			{
 				if (pressed)
 				{
-					buffer ~= code;
+					buffer.pushBack(code);
 					pressedKeys[code] = true;
 				}
 				else

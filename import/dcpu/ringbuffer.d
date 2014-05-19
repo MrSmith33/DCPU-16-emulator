@@ -8,12 +8,23 @@ module dcpu.ringbuffer;
 
 @safe nothrow:
 
+class RingBufferFull : Exception
+{
+}
+
+enum OnBufferFull
+{
+	overwrite,
+	ignore,
+	throwException
+}
+
 struct RingBuffer(E, size_t bufSize)
 {
 	E[bufSize] buffer;
 	size_t frontPos;
 	size_t backPos;
-	size_t size;
+	size_t length;
 
 	@property E front()
 	{
@@ -27,19 +38,19 @@ struct RingBuffer(E, size_t bufSize)
 
 	@property bool isFull()
 	{
-		return size >= bufSize;
+		return length >= bufSize;
 	}
 
 	@property bool empty()
 	{
-		return size == 0;
+		return length == 0;
 	}
 
 	void pushBack(E element)
 	{
 		backPos = (backPos + 1) % bufSize;
 		buffer[backPos] = element;
-		++size;
+		++length;
 	}
 
 	/// Dequeue item from queue.
@@ -48,11 +59,11 @@ struct RingBuffer(E, size_t bufSize)
 	E popBack()
 	in
 	{
-		assert(size > 0);
+		assert(length > 0);
 	}
 	body
 	{
-		--size;
+		--length;
 		auto temp = backPos;
 		backPos = (backPos - 1) % bufSize;
 		return buffer[temp];
@@ -64,11 +75,11 @@ struct RingBuffer(E, size_t bufSize)
 	E popFront()
 	in
 	{
-		assert(size > 0);
+		assert(length > 0);
 	}
 	body
 	{
-		--size;
+		--length;
 		auto temp = frontPos;
 		frontPos = (frontPos + 1) % bufSize;
 		return buffer[temp];
@@ -78,13 +89,13 @@ struct RingBuffer(E, size_t bufSize)
 	{
 		frontPos = (frontPos - 1) % bufSize;
 		buffer[frontPos] = element;
-		++size;
+		++length;
 	}
 
 	void clear() nothrow
 	{
 		frontPos = 0;
 		backPos = 0;
-		size = 0;
+		length = 0;
 	}
 }

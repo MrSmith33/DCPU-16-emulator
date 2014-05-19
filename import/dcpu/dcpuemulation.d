@@ -187,7 +187,7 @@ void triggerInterrupt(Cpu)(ref Cpu dcpu, ushort message)
 /// Handles interrupt from interrupt queue if reg_ia != 0 && intQueue.length > 0
 void handleInterrupt(Cpu)(ref Cpu dcpu)
 {
-	if (dcpu.intQueue.size == 0) return;
+	if (dcpu.intQueue.length == 0) return;
 
 	ushort message = dcpu.intQueue.popFront();
 
