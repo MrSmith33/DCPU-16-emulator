@@ -5,16 +5,16 @@ Authors: Andrey Penechko.
 */
 
 
-module dcpu.devices.lem1802;
+module emulator.dcpu.devices.lem1802;
 
 import std.stdio;
 
 import anchovy.graphics.bitmap;
 
-import dcpu.devices.idevice;
-import dcpu.emulator;
-import dcpu.dcpu;
-import dcpu.undoproxy;
+import emulator.dcpu.devices.idevice;
+import emulator.dcpu.emulator;
+import emulator.dcpu.dcpu;
+import emulator.utils.undoproxy;
 
 @trusted nothrow:
 

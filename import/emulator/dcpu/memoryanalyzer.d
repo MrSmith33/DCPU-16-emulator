@@ -4,7 +4,7 @@ License: a$(WEB boost.org/LICENSE_1_0.txt, Boost License 1.0).
 Authors: Andrey Penechko.
 */
 
-module dcpu.memoryanalyzer;
+module emulator.dcpu.memoryanalyzer;
 
 import std.array;
 import std.algorithm : sort, find;
@@ -12,10 +12,10 @@ import std.conv : to;
 import std.string : format;
 import std.stdio : writeln, writefln;
 
-import dcpu.dcpu;
-import dcpu.constants;
-import dcpu.dcpuinstruction;
-import dcpu.dcpuemulation;
+import emulator.dcpu.dcpu;
+import emulator.dcpu.constants;
+import emulator.dcpu.dcpuinstruction;
+import emulator.dcpu.dcpuemulation;
 
 class MemoryAnalyzer(Cpu)
 {

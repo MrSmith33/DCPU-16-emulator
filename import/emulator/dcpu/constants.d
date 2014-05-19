@@ -4,7 +4,7 @@ License: a$(WEB boost.org/LICENSE_1_0.txt, Boost License 1.0).
 Authors: Andrey Penechko.
 */
 
-module dcpu.constants;
+module emulator.dcpu.constants;
 
 /// Table of literal values which may be stored in 'a' operand.
 static ushort[32] literals =

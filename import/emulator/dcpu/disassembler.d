@@ -4,16 +4,16 @@ License: a$(WEB boost.org/LICENSE_1_0.txt, Boost License 1.0).
 Authors: Andrey Penechko.
 */
 
-module dcpu.disassembler;
+module emulator.dcpu.disassembler;
 
 import std.algorithm : joiner;
 import std.conv : to;
 import std.string : format;
 import std.range : repeat;
 
-import dcpu.constants;
-import dcpu.dcpuinstruction;
-import dcpu.memoryanalyzer;
+import emulator.dcpu.constants;
+import emulator.dcpu.dcpuinstruction;
+import emulator.dcpu.memoryanalyzer;
 
 enum indentStr = "    ";
 

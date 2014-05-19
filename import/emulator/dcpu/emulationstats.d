@@ -4,10 +4,10 @@ License: a$(WEB boost.org/LICENSE_1_0.txt, Boost License 1.0).
 Authors: Andrey Penechko.
 */
 
-module dcpu.emulationstats;
+module emulator.dcpu.emulationstats;
 
-import dcpu.dcpuinstruction;
-import dcpu.constants;
+import emulator.dcpu.constants;
+import emulator.dcpu.dcpuinstruction;
 
 struct EmulationStatistics
 {

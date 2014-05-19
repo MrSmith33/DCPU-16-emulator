@@ -4,7 +4,7 @@ License: a$(WEB boost.org/LICENSE_1_0.txt, Boost License 1.0).
 Authors: Andrey Penechko.
 */
 
-module memoryview;
+module emulator.dcpu.memoryview;
 
 import std.string;
 import std.array;
@@ -14,7 +14,7 @@ import std.math : ceil;
 
 public import anchovy.gui.databinding.list;
 
-import dcpu.dcpu;
+import emulator.dcpu.dcpu;
 
 class MemoryView(Cpu) : List!dstring
 {

@@ -5,10 +5,10 @@ Authors: Andrey Penechko.
 */
 
 
-module dcpu.devices.idevice;
+module emulator.dcpu.devices.idevice;
 
 //import dcpu.dcpu;
-import dcpu.emulator;
+import emulator.dcpu.emulator;
 
 @trusted nothrow:
 

@@ -4,16 +4,16 @@ License: a$(WEB boost.org/LICENSE_1_0.txt, Boost License 1.0).
 Authors: Andrey Penechko.
 */
 
-module dcpu.dcpuemulation;
+module emulator.dcpu.dcpuemulation;
 
 import std.stdio;
 
-import dcpu.dcpu;
-import dcpu.devices.idevice;
-import dcpu.undoproxy;
-import dcpu.disassembler;
-import dcpu.dcpuinstruction;
-import dcpu.constants;
+import emulator.dcpu.dcpu;
+import emulator.dcpu.devices.idevice;
+import emulator.dcpu.constants;
+import emulator.dcpu.disassembler;
+import emulator.dcpu.dcpuinstruction;
+import emulator.utils.undoproxy;
 
 void execute(Cpu)(ref Cpu dcpu, ref Instruction instr)
 {

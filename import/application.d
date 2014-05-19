@@ -22,17 +22,17 @@ import anchovy.gui.guirenderer;
 
 import anchovy.gui.application.application;
 
-import dcpu.emulator;
-import dcpu.disassembler;
-import dcpu.memoryanalyzer;
-import dcpu.dcpu;
-import dcpu.updatequeue;
-import memoryview;
+import emulator.dcpu.emulator;
+import emulator.dcpu.disassembler;
+import emulator.dcpu.memoryanalyzer;
+import emulator.dcpu.dcpu;
+import emulator.dcpu.updatequeue;
+import emulator.dcpu.memoryview;
 
-import dcpu.devices.lem1802;
-import dcpu.devices.genericclock;
-import dcpu.devices.generickeyboard;
-import dcpu.devices.floppydrive;
+import emulator.dcpu.devices.lem1802;
+import emulator.dcpu.devices.genericclock;
+import emulator.dcpu.devices.generickeyboard;
+import emulator.dcpu.devices.floppydrive;
 
 class EmulatorApplication : Application!GlfwWindow
 {

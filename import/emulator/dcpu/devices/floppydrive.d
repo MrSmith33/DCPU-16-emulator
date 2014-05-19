@@ -5,14 +5,14 @@ Authors: Andrey Penechko.
 */
 
 
-module dcpu.devices.floppydrive;
+module emulator.dcpu.devices.floppydrive;
 
 import std.stdio;
 import std.math : abs;
 
-import dcpu.devices.idevice;
-import dcpu.emulator;
-import dcpu.dcpu;
+import emulator.dcpu.devices.idevice;
+import emulator.dcpu.emulator;
+import emulator.dcpu.dcpu;
 
 @trusted nothrow:
 

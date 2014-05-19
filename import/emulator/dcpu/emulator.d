@@ -5,19 +5,18 @@ Authors: Andrey Penechko.
 */
 
 
-module dcpu.emulator;
+module emulator.dcpu.emulator;
 
 import std.conv : to;
 import std.stdio;
 
-import dcpu.dcpu;
-static import dcpu.dcpu;
-import dcpu.devices.idevice;
-import dcpu.undoproxy;
+import emulator.dcpu.dcpu;
+import emulator.dcpu.devices.idevice;
+import emulator.utils.undoproxy;
 
-public import dcpu.dcpuemulation;
-public import dcpu.dcpuinstruction;
-import dcpu.emulationstats;
+public import emulator.dcpu.dcpuemulation;
+public import emulator.dcpu.dcpuinstruction;
+import emulator.dcpu.emulationstats;
 
 //@safe nothrow:
 

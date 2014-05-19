@@ -4,7 +4,7 @@ License: a$(WEB boost.org/LICENSE_1_0.txt, Boost License 1.0).
 Authors: Andrey Penechko.
 */
 
-module dcpu.undoproxy;
+module emulator.utils.undoproxy;
 
 //version = debug_observer;
 
@@ -14,7 +14,8 @@ import std.range : iota, take, popFrontN;
 import std.bitmanip : append, peek;
 version(debug_observer) import std.stdio;
 import std.string : format;
-import dcpu.groupsequence;
+
+import emulator.utils.groupsequence;
 
 @trusted:
 

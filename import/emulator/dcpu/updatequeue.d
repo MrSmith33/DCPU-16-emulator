@@ -4,12 +4,12 @@ License: a$(WEB boost.org/LICENSE_1_0.txt, Boost License 1.0).
 Authors: Andrey Penechko.
 */
 
-module dcpu.updatequeue;
+module emulator.dcpu.updatequeue;
 
 import std.algorithm : swap, filter, sort;
 import std.stdio;
 
-import dcpu.devices.idevice;
+import emulator.dcpu.devices.idevice;
 
 struct UpdateQuery(Cpu)
 {

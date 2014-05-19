@@ -5,7 +5,7 @@ Authors: Andrey Penechko.
 */
 
 
-module dcpu.devices.generickeyboard;
+module emulator.dcpu.devices.generickeyboard;
 
 import std.array;
 import std.bitmanip;
@@ -14,10 +14,10 @@ import std.stdio;
 import anchovy.core.input;
 import anchovy.graphics.bitmap;
 
-import dcpu.devices.idevice;
-import dcpu.emulator;
-import dcpu.dcpu;
-import dcpu.ringbuffer;
+import emulator.dcpu.devices.idevice;
+import emulator.dcpu.emulator;
+import emulator.dcpu.dcpu;
+import emulator.utils.ringbuffer;
 
 @trusted nothrow:
 
@@ -31,7 +31,6 @@ class GenericKeyboard(Cpu) : IDevice!Cpu
 protected:
 	Emulator!Cpu _emulator;
 	ushort interruptMessage;
-	//ushort[] buffer;
 	RingBuffer!(ushort, 256) buffer;
 	BitArray pressedKeys;
 

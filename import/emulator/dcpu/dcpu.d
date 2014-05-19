@@ -5,14 +5,14 @@ Authors: Andrey Penechko.
 */
 
 
-module dcpu.dcpu;
+module emulator.dcpu.dcpu;
 
 import std.algorithm : fill;
 
-import dcpu.devices.idevice;
-import dcpu.ringbuffer;
-import dcpu.updatequeue;
-import dcpu.undoproxy;
+import emulator.dcpu.devices.idevice;
+import emulator.dcpu.updatequeue;
+import emulator.utils.ringbuffer;
+import emulator.utils.undoproxy;
 
 @safe:
 
