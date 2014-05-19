@@ -8,18 +8,21 @@ module dcpu.ringbuffer;
 
 @safe nothrow:
 
-class RingBufferFull : Exception
+class RingBufferFullException : Exception
 {
+	this(string msg, string file = __FILE__, size_t line = __LINE__)
+	{
+		super(msg, file, line);
+	}
 }
 
 enum OnBufferFull
 {
 	overwrite,
-	ignore,
 	throwException
 }
 
-struct RingBuffer(E, size_t bufSize)
+struct RingBuffer(E, size_t bufSize, OnBufferFull onBufferFull = OnBufferFull.overwrite)
 {
 	E[bufSize] buffer;
 	size_t frontPos;
@@ -48,6 +51,23 @@ struct RingBuffer(E, size_t bufSize)
 
 	void pushBack(E element)
 	{
+		if (isFull)
+		{
+			static if (onBufferFull == OnBufferFull.overwrite)
+			{
+				backPos = (backPos + 1) % bufSize;
+				frontPos = (frontPos + 1) % frontPos;
+
+				buffer[backPos] = element;
+
+				return;
+			}
+			else
+			{
+				throw new RingBufferFullException("Ring buffer is full");
+			}
+		}
+
 		backPos = (backPos + 1) % bufSize;
 		buffer[backPos] = element;
 		++length;

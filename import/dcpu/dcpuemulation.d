@@ -185,9 +185,11 @@ void triggerInterrupt(Cpu)(ref Cpu dcpu, ushort message)
 }
 
 /// Handles interrupt from interrupt queue if reg_ia != 0 && intQueue.length > 0
+/// Handles interrupts only when interrupt queuing is disabled.
+/// It may be enabled by interrupt handler or manually in time critical code.
 void handleInterrupt(Cpu)(ref Cpu dcpu)
 {
-	if (dcpu.intQueue.length == 0) return;
+	if (dcpu.intQueue.empty || dcpu.regs.queueInterrupts) return;
 
 	ushort message = dcpu.intQueue.popFront();
 

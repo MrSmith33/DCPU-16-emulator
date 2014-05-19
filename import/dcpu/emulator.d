@@ -49,12 +49,7 @@ public class Emulator(CpuType)
 
 		dcpu.execute(instr);
 
-		// Handle interrupts only when interrupt queuing is disabled.
-		// It may be enabled by interrupt handler or manually in time critical code.
-		if (!dcpu.regs.queueInterrupts)
-		{
-			handleInterrupt(dcpu);
-		}
+		handleInterrupt(dcpu);
 
 		ulong diff = dcpu.regs.cycles - initialCycles;
 
