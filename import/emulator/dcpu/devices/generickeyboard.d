@@ -59,7 +59,7 @@ public:
 		{
 			// Clear keyboard buffer
 			case 0:
-				buffer.length = 0;
+				buffer.clear();
 				return 0;
 
 			// Get next key from key buffer
@@ -99,8 +99,6 @@ public:
 
 	void onKey(KeyCode keyCode, uint modifiers, bool pressed)
 	{
-		//if (interruptMessage == 0) return;
-
 		ushort code = 0;
 
 		if (keyCode <= 348)
@@ -108,35 +106,24 @@ public:
 			
 			if (modifiers & KeyModifiers.SHIFT)
 			{
-				//writefln("with shift %08b", modifiers);
 				code = shiftScancodes[keyCode];
 			}
 			else
 			{
-				//writefln("without shift");
 				code = bareScancodes[keyCode];
 			}
 		}
 
 		if (code != 0)
 		{
-			if (code >= 0x09 && code <= 0x91)
+			if (code >= 0x09 && code <= 0x91) //valid keys
 			{
+				pressedKeys[code] = pressed;
+
 				if (pressed)
 				{
 					buffer.pushBack(code);
-					pressedKeys[code] = true;
 				}
-				else
-				{
-					/*if (!isPrintableChar(code)) // Printable
-					{
-						buffer ~= code;
-					}*/
-					
-					pressedKeys[code] = false;
-				}
-				//writefln("%s %s", code, pressedKeys[code]);
 			}
 
 			if (!triggeredInterrupt && interruptMessage > 0)
@@ -154,11 +141,6 @@ public:
 
 	/// Called when application does rendering
 	override void updateFrame()
-	{
-		triggeredInterrupt = false;
-	}
-
-	override void handleUpdateQuery(ref size_t message, ref ulong delay)
 	{
 		triggeredInterrupt = false;
 	}
@@ -211,6 +193,7 @@ protected:
 	{
 		pressedKeys.length = 0;
 		pressedKeys.length = 0x91 + 1; // control + 1. total keys
+		buffer.clear();
 	}
 }
 

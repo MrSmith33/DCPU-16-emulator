@@ -137,12 +137,9 @@ public:
 	}
 
 	override void handleUpdateQuery(ref size_t message, ref ulong delay)
-	in
 	{
 		assert(_floppy);
-	}
-	body
-	{
+
 		if (isReading)
 		{
 			auto ram = _emulator.dcpu.mem;

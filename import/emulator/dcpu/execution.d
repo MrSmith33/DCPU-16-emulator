@@ -54,12 +54,12 @@ void basicInstruction(Cpu)(ref Cpu dcpu, ref Instruction instr)
 		case MUL: result = b * a; regs.ex = result >> 16; break;
 		case MLI: result = cast(short)a * cast(short)b; regs.ex = result >> 16; break;
 		case DIV: if (a==0){regs.ex = 0; result = 0;}
-					else {result = b/a; regs.ex = ((b << 16)/a) & 0xFFFF;} break; // TODO:test
+					else {result = b/a; regs.ex = ((b << 16)/a) & 0xFFFF;} break;
 		case DVI: if (a==0){regs.ex = 0; result = 0;}
 					else {
 						result = cast(short)b/cast(short)a;
 						regs.ex = ((cast(short)b << 16)/cast(short)a) & 0xFFFF;
-					} break; // TODO:test
+					} break;
 		case MOD: result = a == 0 ? 0 : b % a; break;
 		case MDI: result = a == 0 ? 0 : cast(short)b % cast(short)a; break;
 		case AND: result = a & b; break;
@@ -85,14 +85,13 @@ void basicInstruction(Cpu)(ref Cpu dcpu, ref Instruction instr)
 					break;
 		case STI: ba.set(a); regs.i = cast(ushort)(regs.i + 1); regs.j = cast(ushort)(regs.j + 1); return;
 		case STD: ba.set(a); regs.i = cast(ushort)(regs.i - 1); regs.j = cast(ushort)(regs.j - 1); return;
-		default: ;//writeln("Unknown instruction " ~ to!string(instr.opcode)); //Invalid opcode
+		default: ; //Invalid opcode
 	}
 
 	if (instr.operandB < 0x1F)
 	{
 		ba.set(result & 0xFFFF);
 	}
-	//else Attempting to write to a literal
 }
 
 /// Performs special instruction.
@@ -125,7 +124,7 @@ void specialInstruction(Cpu)(ref Cpu dcpu, ref Instruction instr)
 		case HWN: aa.set(numDevices); writefln("HWN %s %s pc:%04X", numDevices, aa.get(), regs.pc);break;
 		case HWQ: dcpu.queryHardwareInfo(a); break;
 		case HWI: dcpu.sendHardwareInterrupt(a); break;
-		default : ;//writeln("Unknown instruction " ~ to!string(opcode));
+		default : ;
 	}
 }
 

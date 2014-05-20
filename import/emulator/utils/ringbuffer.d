@@ -68,8 +68,8 @@ struct RingBuffer(E, size_t bufSize, OnBufferFull onBufferFull = OnBufferFull.ov
 			}
 		}
 
-		backPos = (backPos + 1) % bufSize;
 		buffer[backPos] = element;
+		backPos = (backPos + 1) % bufSize;
 		++length;
 	}
 
