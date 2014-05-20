@@ -22,7 +22,21 @@ import emulator.utils.groupsequence;
 /// Needs ubyte[] observableArray; in insertion context to work.
 mixin template UndoHelper()
 {
-	enum maxUndoSeqLength = 128;
+	enum maxUndoSeqLength = ubyte.max - 1;
+	enum emptyUpdateValue = ubyte.max;
+
+	static if (observableArray.length <= ubyte.max)
+	{
+		alias PositionType = ubyte;
+	}
+	else static if (observableArray.length <= ushort.max)
+	{
+		alias PositionType = ushort;
+	}
+	else static if (observableArray.length <= uint.max)
+	{
+		alias PositionType = uint;
+	}
 
 	// Saves initial value of ubyte at index
 	ubyte[size_t] frameUndoMap;
@@ -51,14 +65,14 @@ mixin template UndoHelper()
 
 		foreach(changeGroup; changeGroups)
 		{
-			auto position = changeGroup[0];
+			PositionType position = cast(PositionType)changeGroup[0];
 
 			size_t len = changeGroup[1];
 
 			if (len <= maxUndoSeqLength)
 			{
 				undoStack ~= iota(position, position+len).map!(a => frameUndoMap[a]);
-				undoStack.append!uint(position);
+				undoStack.append!PositionType(position);
 				undoStack.append!ubyte(cast(ubyte)len);
 			}
 			else
@@ -71,7 +85,7 @@ mixin template UndoHelper()
 											maxUndoSeqLength : undoElements.length;
 					
 					undoStack ~= undoElements.take(numElementsToAdd);
-					undoStack.append!uint(position);
+					undoStack.append!PositionType(position);
 					undoStack.append!ubyte(cast(ubyte)numElementsToAdd);
 
 					undoElements.popFrontN(numElementsToAdd);
@@ -124,16 +138,16 @@ mixin template UndoHelper()
 				}
 
 				// extract target positon
-				size_t position = undoStack.data.peek!uint(undoStackSize - 5);
+				size_t position = undoStack.data.peek!PositionType(undoStackSize - PositionType.sizeof - 1);
 
 				// extract undo data
-				auto undoData = undoStack.data[$ - (5 + length)..$ - 5];
+				auto undoData = undoStack.data[$ - (PositionType.sizeof + 1 + length)..$ - PositionType.sizeof - 1];
 
 				// Make undo
 				observableArray[position..position + undoData.length] = undoData;
 
 				// Shrink undo stack
-				auto shrinkDelta = ubyte.sizeof + uint.sizeof + length;
+				auto shrinkDelta = ubyte.sizeof + PositionType.sizeof + length;
 				undoStack.shrinkTo(undoStackSize - shrinkDelta);
 			}
 
