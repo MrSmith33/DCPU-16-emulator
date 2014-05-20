@@ -58,7 +58,6 @@ public:
 	{
 		ushort aRegister = _emulator.dcpu.regs.a;
 		ushort bRegister = _emulator.dcpu.regs.b;
-		//writefln("Clock: int a:%s b:%s", aRegister, bRegister);
 
 		switch(aRegister)
 		{

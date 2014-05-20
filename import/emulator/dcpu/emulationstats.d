@@ -19,7 +19,9 @@ struct EmulationStatistics
 	ulong[3] numOperandsDone;
 
 	void onInstructionDone(ref const Instruction instr, ulong cycles)
-	{			
+	{
+		if (instr.operands == 0) return;
+
 		cyclesDone += cycles;
 		++totalInstrDone;
 		if (instr.operands == 2) ++basicDoneTimes[instr.opcode];
@@ -30,7 +32,9 @@ struct EmulationStatistics
 	}
 
 	void onInstructionUndone(ref const Instruction instr, ulong cycles)
-	{			
+	{
+		if (instr.operands == 0) return;
+		
 		cyclesDone -= cycles;
 		--totalInstrDone;
 		if (instr.operands == 2) --basicDoneTimes[instr.opcode];
@@ -93,6 +97,7 @@ struct EmulationStatistics
 
 			++inRow;
 		}
+		writeln;
 
 		stdout.flush();
 	}
