@@ -14,8 +14,8 @@ import emulator.dcpu.dcpu;
 import emulator.dcpu.devices.idevice;
 import emulator.utils.undoproxy;
 
-public import emulator.dcpu.dcpuemulation;
-public import emulator.dcpu.dcpuinstruction;
+public import emulator.dcpu.execution;
+public import emulator.dcpu.instruction;
 import emulator.dcpu.emulationstats;
 
 //@safe nothrow:

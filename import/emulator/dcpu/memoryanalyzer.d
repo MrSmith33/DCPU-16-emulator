@@ -14,8 +14,8 @@ import std.stdio : writeln, writefln;
 
 import emulator.dcpu.dcpu;
 import emulator.dcpu.constants;
-import emulator.dcpu.dcpuinstruction;
-import emulator.dcpu.dcpuemulation;
+import emulator.dcpu.instruction;
+import emulator.dcpu.execution;
 
 class MemoryAnalyzer(Cpu)
 {

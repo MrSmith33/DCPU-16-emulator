@@ -7,7 +7,7 @@ Authors: Andrey Penechko.
 module emulator.dcpu.emulationstats;
 
 import emulator.dcpu.constants;
-import emulator.dcpu.dcpuinstruction;
+import emulator.dcpu.instruction;
 
 struct EmulationStatistics
 {

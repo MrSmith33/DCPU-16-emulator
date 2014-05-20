@@ -4,7 +4,7 @@ License: a$(WEB boost.org/LICENSE_1_0.txt, Boost License 1.0).
 Authors: Andrey Penechko.
 */
 
-module emulator.dcpu.dcpuemulation;
+module emulator.dcpu.execution;
 
 import std.stdio;
 
@@ -12,7 +12,7 @@ import emulator.dcpu.dcpu;
 import emulator.dcpu.devices.idevice;
 import emulator.dcpu.constants;
 import emulator.dcpu.disassembler;
-import emulator.dcpu.dcpuinstruction;
+import emulator.dcpu.instruction;
 import emulator.utils.undoproxy;
 
 void execute(Cpu)(ref Cpu dcpu, ref Instruction instr)
@@ -246,5 +246,5 @@ void skip(Cpu)(ref Cpu dcpu, ref ushort pc)
 		pc += 1 + aNext;
 	}
 
-	dcpu.regs.cycles = dcpu.regs.cycles + 1;
+	dcpu.regs.inc!"cycles";
 }

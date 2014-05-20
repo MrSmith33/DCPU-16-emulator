@@ -12,7 +12,7 @@ import std.string : format;
 import std.range : repeat;
 
 import emulator.dcpu.constants;
-import emulator.dcpu.dcpuinstruction;
+import emulator.dcpu.instruction;
 import emulator.dcpu.memoryanalyzer;
 
 enum indentStr = "    ";
