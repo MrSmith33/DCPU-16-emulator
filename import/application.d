@@ -125,20 +125,34 @@ class EmulatorApplication : Application!GlfwWindow
 		});
 		monitorWidget.setProperty!"isFocusable"(true);
 
-		auto stepHandler = delegate bool(Widget widget, PointerClickEvent event)
+		auto stepButtonHandler = delegate bool(Widget widget, PointerClickEvent event)
 		{
 			step(widget.getPropertyAs!("stepSize", int));
 			return true;
 		};
 
-		context.getWidgetById("unstep").addEventHandler(stepHandler);
-		context.getWidgetById("unstep10").addEventHandler(stepHandler);
-		context.getWidgetById("unstep100").addEventHandler(stepHandler);
-		context.getWidgetById("unstep1000").addEventHandler(stepHandler);
-		context.getWidgetById("step").addEventHandler(stepHandler);
-		context.getWidgetById("step10").addEventHandler(stepHandler);
-		context.getWidgetById("step100").addEventHandler(stepHandler);
-		context.getWidgetById("step1000").addEventHandler(stepHandler);
+		context.getWidgetById("unstep").addEventHandler(stepButtonHandler);
+		context.getWidgetById("unstep10").addEventHandler(stepButtonHandler);
+		context.getWidgetById("unstep100").addEventHandler(stepButtonHandler);
+		context.getWidgetById("unstep1000").addEventHandler(stepButtonHandler);
+		context.getWidgetById("step").addEventHandler(stepButtonHandler);
+		context.getWidgetById("step10").addEventHandler(stepButtonHandler);
+		context.getWidgetById("step100").addEventHandler(stepButtonHandler);
+		context.getWidgetById("step1000").addEventHandler(stepButtonHandler);
+
+		auto speedButtonHandler = delegate bool(Widget widget, PointerClickEvent event)
+		{
+			setCpuClockSpeed(cast(uint)(widget.getPropertyAs!("speed", int)));
+			return true;
+		};
+
+		context.getWidgetById("speed10").addEventHandler(speedButtonHandler);
+		context.getWidgetById("speed100").addEventHandler(speedButtonHandler);
+		context.getWidgetById("speed1k").addEventHandler(speedButtonHandler);
+		context.getWidgetById("speed10k").addEventHandler(speedButtonHandler);
+		context.getWidgetById("speed100k").addEventHandler(speedButtonHandler);
+		context.getWidgetById("speed500k").addEventHandler(speedButtonHandler);
+		context.getWidgetById("speed1m").addEventHandler(speedButtonHandler);
 		
 		auto runBackwardButton = context.getWidgetById("runback");
 		runBackwardButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){runBackward(); return true;});
@@ -181,7 +195,7 @@ class EmulatorApplication : Application!GlfwWindow
 		emulator.loadProgram(loadBinary(file));
 		printRegisters();
 		memoryList.listChangedSignal.emit();
-		
+
 		return true;
 	}
 
@@ -213,6 +227,11 @@ class EmulatorApplication : Application!GlfwWindow
 
 		printRegisters();
 		memoryList.listChangedSignal.emit();
+	}
+
+	void setCpuClockSpeed(uint clockSpeed)
+	{
+		emulator.dcpu.clockSpeed = clockSpeed;
 	}
 
 	override void update(double dt)

@@ -100,13 +100,48 @@ void buildPackage(ref packageSettings settings, string flags)
 	}
 }
 
-void main()
+import std.getopt;
+void main(string[] args)
 {
-	auto imports = ["deps/anchovy/import", "deps/anchovy/deps/dlib", "deps/anchovy/deps/derelict-fi-master/source", "deps/anchovy/deps/derelict-sdl2-master/source", "deps/anchovy/deps/derelict-ft-master/source", "deps/anchovy/deps/derelict-gl3-master/source", "deps/anchovy/deps/derelict-glfw3-master/source", "deps/anchovy/deps/derelict-util-1.0.0/source", "deps/anchovy/deps/sdlang-d-0.8.4/src"];
+	bool release;
+
+	getopt(
+	    args,
+	    std.getopt.config.passThrough,
+	    "release|r",  &release
+	);
+
+	auto imports = ["deps/anchovy/import",
+	"deps/anchovy/deps/dlib",
+	"deps/anchovy/deps/derelict-fi-master/source",
+	"deps/anchovy/deps/derelict-sdl2-master/source",
+	"deps/anchovy/deps/derelict-ft-master/source",
+	"deps/anchovy/deps/derelict-gl3-master/source",
+	"deps/anchovy/deps/derelict-glfw3-master/source",
+	"deps/anchovy/deps/derelict-util-1.0.0/source",
+	"deps/anchovy/deps/sdlang-d-0.8.4/src"];
 	auto packages = [
-	pack("examples", "import", imports,
-		["deps/anchovy/deps/derelict-util-1.0.0/lib/DerelictUtil","deps/anchovy/deps/derelict-glfw3-master/lib/DerelictGLFW3", "deps/anchovy/deps/derelict-gl3-master/lib/DerelictGL3", "deps/anchovy/deps/derelict-ft-master/lib/DerelictFT", "deps/anchovy/deps/derelict-fi-master/lib/DerelictFI", "deps/anchovy/deps/dlib/dlib","deps/anchovy/lib/debug/utils", "deps/anchovy/lib/debug/core", "deps/anchovy/lib/debug/graphics", "deps/anchovy/deps/sdlang-d-0.8.4/sdlang-d", "deps/anchovy/lib/debug/gui"].retro.array, "bin/emulator", executable)];
+		pack("application",
+			 "import",
+			 imports,
+				["deps/anchovy/deps/derelict-util-1.0.0/lib/DerelictUtil",
+				"deps/anchovy/deps/derelict-glfw3-master/lib/DerelictGLFW3",
+				"deps/anchovy/deps/derelict-gl3-master/lib/DerelictGL3",
+				"deps/anchovy/deps/derelict-ft-master/lib/DerelictFT",
+				"deps/anchovy/deps/derelict-fi-master/lib/DerelictFI",
+				"deps/anchovy/deps/dlib/dlib",
+				"deps/anchovy/lib/debug/utils",
+				"deps/anchovy/lib/debug/core",
+				"deps/anchovy/lib/debug/graphics",
+				"deps/anchovy/deps/sdlang-d-0.8.4/sdlang-d",
+				"deps/anchovy/lib/debug/gui"].retro.array,
+			"bin/emulator",
+			executable)
+	];
 	
 	foreach(ref pack; packages)
-		buildPackage(pack, "-debug -gc -de -m32");
+		if(release)
+			buildPackage(pack, "-release -O -inline -m32");
+		else
+			buildPackage(pack, "-debug -gc -de -m32");
 }

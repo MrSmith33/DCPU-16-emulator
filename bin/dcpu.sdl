@@ -29,8 +29,8 @@ template:mainLayer {
 				text-button id="speed1k" speed=1000 text="1kHz"
 				text-button id="speed10k" speed=10000 text="10kHz"
 				text-button id="speed100k" speed=100000 text="100kHz"
+				text-button id="speed500k" speed=500000 text="500kHz"
 				text-button id="speed1m" speed=1000000 text="1MHz"
-				text-button id="speed10m" speed=10000000 text="10MHz"
 			}
 			widget layout="horizontal" isVisible=false padding=2 {
 				text-button id="disasm" text="Disassemble"
