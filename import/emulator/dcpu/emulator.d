@@ -40,45 +40,48 @@ public class Emulator(CpuType)
 	}
 
 	/// Performs next instruction
-	void step()
+	void step(ulong numInstructions = 1)
 	{
-		ulong initialCycles = dcpu.regs.cycles;
-
-		Instruction instr = dcpu.fetchNext();
-
-		dcpu.execute(instr);
-
-		handleInterrupt(dcpu);
-
-		ulong diff = dcpu.regs.cycles - initialCycles;
-
-		// Update statistics
-		stats.onInstructionDone(instr, diff);
-
-		// Update devices
-		dcpu.updateQueue.onTick(diff);
-		dcpu.regs.instructions = dcpu.regs.instructions + 1;
-
-		// Commit changes to undo stack
-		dcpu.regs.commitFrame(dcpu.regs.instructions);
-		dcpu.mem.commitFrame(dcpu.regs.instructions);
-
-		foreach(IUndoable device; dcpu.devices.values)
+		foreach(_; 0..numInstructions)
 		{
-			device.commitFrame(dcpu.regs.instructions);
+			ulong initialCycles = dcpu.regs.cycles;
+
+			Instruction instr = dcpu.fetchNext();
+
+			dcpu.execute(instr);
+
+			handleInterrupt(dcpu);
+
+			ulong diff = dcpu.regs.cycles - initialCycles;
+
+			// Update statistics
+			stats.onInstructionDone(instr, diff);
+
+			// Update devices
+			dcpu.updateQueue.onTick(diff);
+			dcpu.regs.instructions = dcpu.regs.instructions + 1;
+
+			// Commit changes to undo stack
+			dcpu.regs.commitFrame(dcpu.regs.instructions);
+			dcpu.mem.commitFrame(dcpu.regs.instructions);
+
+			foreach(IUndoable device; dcpu.devices.values)
+			{
+				device.commitFrame(dcpu.regs.instructions);
+			}
 		}
 	}
 
-	void unstep(ulong frames)
+	void unstep(ulong numInstructions = 1)
 	{
 		ulong initialCycles = dcpu.regs.cycles;
 
 		// Undo
-		dcpu.regs.undoFrames(frames);
-		dcpu.mem.undoFrames(frames);
+		dcpu.regs.undoFrames(numInstructions);
+		dcpu.mem.undoFrames(numInstructions);
 		foreach(IUndoable device; dcpu.devices.values)
 		{
-			device.undoFrames(frames);
+			device.undoFrames(numInstructions);
 		}
 
 		// Update statistics
@@ -117,15 +120,6 @@ public class Emulator(CpuType)
 		}
 
 		return initialCycles - dcpu.regs.cycles;
-	}
-
-	// Steps instructionsToStep instructions.
-	void stepInstructions(ulong instructionsToStep)
-	{
-		foreach(_; 0..instructionsToStep)
-		{
-			step();
-		}
 	}
 
 	/// Resets dcpu state and interpreter state to their initial state.

@@ -125,29 +125,20 @@ class EmulatorApplication : Application!GlfwWindow
 		});
 		monitorWidget.setProperty!"isFocusable"(true);
 
-		auto unstepButton = context.getWidgetById("unstep");
-		unstepButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){unstep(1); return true;});
-		
-		auto unstep10Button = context.getWidgetById("unstep10");
-		unstep10Button.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){unstep(10); return true;});
-		
-		auto unstep100Button = context.getWidgetById("unstep100");
-		unstep100Button.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){unstep(100); return true;});
-		
-		auto unstep1000Button = context.getWidgetById("unstep1000");
-		unstep1000Button.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){unstep(1000); return true;});
+		auto stepHandler = delegate bool(Widget widget, PointerClickEvent event)
+		{
+			step(widget.getPropertyAs!("stepSize", int));
+			return true;
+		};
 
-		auto stepButton = context.getWidgetById("step");
-		stepButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){step(); return true;});
-
-		auto stepButton10 = context.getWidgetById("step10");
-		stepButton10.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){emulator.stepInstructions(10); printRegisters(); return true;});
-		
-		auto stepButton100 = context.getWidgetById("step100");
-		stepButton100.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){emulator.stepInstructions(100); printRegisters(); return true;});
-		
-		auto stepButton1000 = context.getWidgetById("step1000");
-		stepButton1000.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){emulator.stepInstructions(1000); printRegisters(); return true;});
+		context.getWidgetById("unstep").addEventHandler(stepHandler);
+		context.getWidgetById("unstep10").addEventHandler(stepHandler);
+		context.getWidgetById("unstep100").addEventHandler(stepHandler);
+		context.getWidgetById("unstep1000").addEventHandler(stepHandler);
+		context.getWidgetById("step").addEventHandler(stepHandler);
+		context.getWidgetById("step10").addEventHandler(stepHandler);
+		context.getWidgetById("step100").addEventHandler(stepHandler);
+		context.getWidgetById("step1000").addEventHandler(stepHandler);
 		
 		auto runBackwardButton = context.getWidgetById("runback");
 		runBackwardButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){runBackward(); return true;});
@@ -190,6 +181,7 @@ class EmulatorApplication : Application!GlfwWindow
 		emulator.loadProgram(loadBinary(file));
 		printRegisters();
 		memoryList.listChangedSignal.emit();
+		
 		return true;
 	}
 
@@ -210,18 +202,15 @@ class EmulatorApplication : Application!GlfwWindow
 		isRunningForward = true;
 	}
 
-	void step()
+	void step(long numFrames)
 	{
 		if (emulator.dcpu.isRunning) return;
-		emulator.step();
-		printRegisters();
-		memoryList.listChangedSignal.emit();
-	}
+		
+		if (numFrames < 0)
+			emulator.unstep(cast(ulong)(-numFrames));
+		else
+			emulator.step(cast(ulong)(numFrames));
 
-	void unstep(ulong frames)
-	{
-		if (emulator.dcpu.isRunning) return;
-		emulator.unstep(frames);
 		printRegisters();
 		memoryList.listChangedSignal.emit();
 	}
@@ -233,9 +222,9 @@ class EmulatorApplication : Application!GlfwWindow
 		if (emulator.dcpu.isRunning)
 		{
 			if (isRunningForward)
-				emulator.stepCycles(1666);
+				emulator.stepCycles(emulator.dcpu.clockSpeed / 60);
 			else
-				emulator.unstepCycles(1666);
+				emulator.unstepCycles(emulator.dcpu.clockSpeed / 60);
 
 			printRegisters();
 			memoryList.listChangedSignal.emit();
