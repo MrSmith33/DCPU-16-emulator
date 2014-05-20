@@ -23,7 +23,7 @@ import emulator.utils.groupsequence;
 mixin template UndoHelper()
 {
 	enum maxUndoSeqLength = ubyte.max - 1;
-	enum emptyUpdateValue = ubyte.max;
+	enum emptyFrameMarker = ubyte.max;
 
 	static if (observableArray.length <= ubyte.max)
 	{
@@ -43,6 +43,7 @@ mixin template UndoHelper()
 
 	Appender!(ubyte[]) undoStack;
 
+
 	bool hasUncommitedChanges() @property
 	{
 		return frameUndoMap.length > 0;
@@ -55,6 +56,13 @@ mixin template UndoHelper()
 
 	void commitFrame(ulong frameNumber)
 	{
+		// Compress empty undos
+		if (frameUndoMap.length == 0)
+		{
+			commitEmptyFrame();
+			return;
+		}
+
 		auto changeGroups = frameUndoMap
 							.keys()
 							.sort!("a<b", SwapStrategy.stable)
@@ -98,6 +106,35 @@ mixin template UndoHelper()
 		discardFrame();
 	}
 
+	// Adds empty frame or increases count of empty frames if one already exists on top of stack.
+	void commitEmptyFrame()
+	{
+		if (undoStackSize > 0)
+		{
+			ubyte length = undoStack.data.peek!ubyte(undoStackSize - 1);
+
+			if (length == emptyFrameMarker)
+			{
+				ubyte numEmptyFrames = undoStack.data.peek!ubyte(undoStackSize - 2);
+
+				if (numEmptyFrames < ubyte.max) 
+				{
+					undoStack.data[undoStackSize - 2] = cast(ubyte)(numEmptyFrames + 1);
+					return;
+				}
+			}
+		}
+
+		// no empty frame on top of undo stack was found.
+		addEmptyUndoFrame();
+	}
+
+	void addEmptyUndoFrame()
+	{
+		undoStack.append!ubyte(1); // Num empty frames.
+		undoStack.append!ubyte(emptyFrameMarker); // Marker.
+	}
+
 	private void addUndoAction(size_t pos, ubyte[] data)
 	in
 	{
@@ -134,6 +171,22 @@ mixin template UndoHelper()
 				if (length == 0)
 				{
 					undoStack.shrinkTo(undoStackSize - 1);
+					break;
+				}
+				else if (length == emptyFrameMarker)
+				{
+					ubyte numEmptyFrames = undoStack.data.peek!ubyte(undoStackSize - 2);
+
+					// Last empty frame
+					if (numEmptyFrames == 1)
+					{
+						undoStack.shrinkTo(undoStackSize - 2);
+						break;
+					}
+
+					// Undo one empty frame by decreasing counter.
+					undoStack.data[$ - 2] = cast(ubyte)(numEmptyFrames - 1);
+
 					break;
 				}
 
