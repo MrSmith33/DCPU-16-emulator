@@ -153,7 +153,7 @@ class EmulatorApplication : Application!GlfwWindow
 		context.getWidgetById("speed100k").addEventHandler(speedButtonHandler);
 		context.getWidgetById("speed500k").addEventHandler(speedButtonHandler);
 		context.getWidgetById("speed1m").addEventHandler(speedButtonHandler);
-		
+
 		auto runBackwardButton = context.getWidgetById("runback");
 		runBackwardButton.addEventHandler(delegate bool(Widget widget, PointerClickEvent event){runBackward(); return true;});
 
@@ -185,6 +185,20 @@ class EmulatorApplication : Application!GlfwWindow
 		memoryView.setProperty!("list", List!dstring)(memoryList);
 		memoryView.setProperty!("sliderPos")(0.0);
 
+		auto collapseZerosCheck = context.getWidgetById("collapseZeros");
+		memoryList.collapseZeros = collapseZerosCheck.getPropertyAs!("isChecked", bool);
+		collapseZerosCheck
+			.property("isChecked")
+			.valueChanged
+			.connect((FlexibleObject a, Variant b)
+			{
+				memoryList.collapseZeros = b.get!bool;
+				writeln(b.get!bool);
+				updateMemoryView();
+			});
+
+		updateMemoryView();
+
 		writeln("\n----------------------------- Load end -----------------------------\n");
 	}
 
@@ -194,7 +208,7 @@ class EmulatorApplication : Application!GlfwWindow
 		attachDevices();
 		emulator.loadProgram(loadBinary(file));
 		printRegisters();
-		memoryList.listChangedSignal.emit();
+		updateMemoryView();
 
 		return true;
 	}
@@ -226,7 +240,7 @@ class EmulatorApplication : Application!GlfwWindow
 			emulator.step(cast(ulong)(numFrames));
 
 		printRegisters();
-		memoryList.listChangedSignal.emit();
+		updateMemoryView();
 	}
 
 	void setCpuClockSpeed(uint clockSpeed)
@@ -246,7 +260,7 @@ class EmulatorApplication : Application!GlfwWindow
 				emulator.unstepCycles(emulator.dcpu.clockSpeed / 60);
 
 			printRegisters();
-			memoryList.listChangedSignal.emit();
+			updateMemoryView();
 		}
 
 		monitor.updateFrame();
@@ -288,6 +302,12 @@ class EmulatorApplication : Application!GlfwWindow
 		 	lines[15]["text"] = "Undo size:";
 		 	lines[16]["text"] = format("%sb", emulator.undoStackSize);
 		}
+	}
+
+	void updateMemoryView()
+	{
+		memoryList.update();
+		memoryList.listChangedSignal.emit();
 	}
 
 	override void closePressed()

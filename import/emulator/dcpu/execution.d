@@ -85,7 +85,7 @@ void basicInstruction(Cpu)(ref Cpu dcpu, ref Instruction instr)
 					break;
 		case STI: ba.set(a); regs.i = cast(ushort)(regs.i + 1); regs.j = cast(ushort)(regs.j + 1); return;
 		case STD: ba.set(a); regs.i = cast(ushort)(regs.i - 1); regs.j = cast(ushort)(regs.j - 1); return;
-		default: ; //Invalid opcode
+		default: {} //Invalid opcode
 	}
 
 	if (instr.operandB < 0x1F)
@@ -124,7 +124,7 @@ void specialInstruction(Cpu)(ref Cpu dcpu, ref Instruction instr)
 		case HWN: aa.set(numDevices); writefln("HWN %s %s pc:%04X", numDevices, aa.get(), regs.pc);break;
 		case HWQ: dcpu.queryHardwareInfo(a); break;
 		case HWI: dcpu.sendHardwareInterrupt(a); break;
-		default : ;
+		default : {}
 	}
 }
 

@@ -43,6 +43,8 @@ mixin template UndoHelper()
 
 	Appender!(ubyte[]) undoStack;
 
+	ulong numUndoFrames;
+
 
 	bool hasUncommitedChanges() @property
 	{
@@ -56,6 +58,8 @@ mixin template UndoHelper()
 
 	void commitFrame(ulong frameNumber)
 	{
+		scope(exit) ++numUndoFrames;
+
 		// Compress empty undos
 		if (frameUndoMap.length == 0)
 		{
@@ -154,6 +158,7 @@ mixin template UndoHelper()
 	void discardUndoStack()
 	{
 		undoStack.shrinkTo(0);
+		numUndoFrames = 0;
 	}
 
 	void undoFrames(ulong numFrames = 1)
@@ -205,6 +210,7 @@ mixin template UndoHelper()
 			}
 
 			++framesUndone;
+			--numUndoFrames;
 			version(debug_observer) writefln("Undo stack %s\n", undoStack.data);
 		}
 	}
