@@ -27,7 +27,7 @@ abstract class IDevice(Cpu) : IUndoable
 	/// Must handle previosly posted update query.
 	/// If next updates is not needed must set delay to zero.
 	/// If set to non-zero will be called after delay cycles elapsed with provided message.
-	void handleUpdateQuery(ref size_t message, ref ulong delay)
+	void handleUpdateQuery(ref ulong delay)
 	{}
 
 	/// Returns: 32 bit word identifying the hardware id.

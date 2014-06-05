@@ -121,7 +121,7 @@ void specialInstruction(Cpu)(ref Cpu dcpu, ref Instruction instr)
 					regs.pc = dcpu.pop();
 					break;
 		case IAQ: regs.queueInterrupts = a > 0; break;
-		case HWN: aa.set(numDevices); writefln("HWN %s %s pc:%04X", numDevices, aa.get(), regs.pc);break;
+		case HWN: aa.set(numDevices); break;
 		case HWQ: dcpu.queryHardwareInfo(a); break;
 		case HWI: dcpu.sendHardwareInterrupt(a); break;
 		default : {}
@@ -147,7 +147,6 @@ void queryHardwareInfo(Cpu)(ref Cpu dcpu, ushort deviceIndex)
 {
 	if (auto device = deviceIndex in dcpu.devices)
 	{
-		//writefln("%08x %04x %08x", device.hardwareId, device.hardwareVersion, device.manufacturer);
 		dcpu.regs.a = device.hardwareId & 0xFFFF;
 		dcpu.regs.b = device.hardwareId >> 16;
 		dcpu.regs.c = device.hardwareVersion;
@@ -163,7 +162,6 @@ void queryHardwareInfo(Cpu)(ref Cpu dcpu, ushort deviceIndex)
 /// Sends an interrupt to hardware deviceIndex
 void sendHardwareInterrupt(Cpu)(ref Cpu dcpu, ushort deviceIndex)
 {
-	//writefln("send interrupt %s", deviceIndex);
 	if (auto device = deviceIndex in dcpu.devices)
 	{
 		dcpu.regs.cycles = dcpu.regs.cycles + device.handleInterrupt();

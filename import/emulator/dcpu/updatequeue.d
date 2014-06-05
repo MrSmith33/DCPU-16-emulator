@@ -15,7 +15,6 @@ struct UpdateQuery(Cpu)
 {
 	IDevice!Cpu device;
 	ulong delay;
-	size_t message;
 }
 
 struct UpdateQueue(Cpu)
@@ -37,7 +36,7 @@ struct UpdateQueue(Cpu)
 				while (ticks >= query.delay)
 				{
 					ticks -= query.delay;
-					query.device.handleUpdateQuery(query.message, query.delay);
+					query.device.handleUpdateQuery(query.delay);
 					//writefln("delay %s", query.delay);
 					if (query.delay == 0) // remove query
 					{
@@ -80,12 +79,12 @@ struct UpdateQueue(Cpu)
 	}
 
 	/// Adds update query
-	void addQuery(IDevice!Cpu device, ulong delay, size_t message = 0)
+	void addQuery(IDevice!Cpu device, ulong delay)
 	{
 		//writefln("begin add %s, %s", device, queries);
 		ulong realDelay = delay + ticksAccumulated;
 
-		queries ~= new UpdateQuery!Cpu(device, realDelay, message);
+		queries ~= new UpdateQuery!Cpu(device, realDelay);
 
 		foreach(i, query; queries)
 		{

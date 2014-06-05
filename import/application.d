@@ -193,7 +193,6 @@ class EmulatorApplication : Application!GlfwWindow
 			.connect((FlexibleObject a, Variant b)
 			{
 				memoryList.collapseZeros = b.get!bool;
-				writeln(b.get!bool);
 				updateMemoryView();
 			});
 

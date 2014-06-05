@@ -45,8 +45,9 @@ protected:
 
 	UndoableStruct!(Lem1802Registers, ushort) regs;
 
+	bool showSplash = true;
 	uint blinkInterval = 70000;
-	uint splashDelay = 1;
+	uint splashDelay = 50000;
 
 	enum numRows = 12;
 	enum numCols = 32;
@@ -119,30 +120,29 @@ public:
 	/// Can be used to update screens.
 	override void updateFrame()
 	{
-		if (regs.enabled && !regs.splash)
+		if (regs.enabled)
 		{
-			repaintScreen();
+			if (regs.splash && showSplash)
+				drawSplash();
+			else
+				repaintScreen();
 		}
+		else
+			clearScreen();
 	}
 
-	override void handleUpdateQuery(ref size_t message, ref ulong delay)
+	override void handleUpdateQuery(ref ulong delay)
 	{
-		//writefln("1 handleUpdateQuery message %s delay %s", message, delay);
-		if (message == 0) // remove splash
+		if (regs.splash) // remove splash
 		{
-			message = 1;
 			delay = blinkInterval;
 			regs.splash = false;
 		}
-		else if (message == 1)
+		else
 		{
 			regs.blinkPhase = !regs.blinkPhase;
 			delay = blinkInterval;
 		}
-		else
-			writefln("unknown message %s", message);
-
-		//writefln("2 handleUpdateQuery message %s delay %s", message, delay);
 	}
 
 	/// Returns: 32 bit word identifying the hardware id.
@@ -203,6 +203,12 @@ protected:
 			}
 		}
 
+		_bitmap.dataChanged.emit();
+	}
+
+	void clearScreen()
+	{
+		(cast(uint[])_bitmap.data)[] = 0xFF000000;
 		_bitmap.dataChanged.emit();
 	}
 
@@ -338,7 +344,7 @@ protected:
 
 			drawSplash();
 
-			_dcpu.updateQueue.addQuery(this, splashDelay, 0);
+			_dcpu.updateQueue.addQuery(this, splashDelay);
 		}
 		else if (b == 0)
 		{

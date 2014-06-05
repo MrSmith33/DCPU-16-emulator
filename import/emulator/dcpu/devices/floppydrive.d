@@ -136,7 +136,7 @@ public:
 
 	}
 
-	override void handleUpdateQuery(ref size_t message, ref ulong delay)
+	override void handleUpdateQuery(ref ulong delay)
 	{
 		assert(_floppy);
 
@@ -232,7 +232,7 @@ protected:
 
 			uint ticksToWait = cast(uint)(((distance * seekingTime) + sectorReadWriteSpeed) * _emulator.dcpu.clockSpeed);
 
-			_emulator.dcpu.updateQueue.addQuery(this, ticksToWait, 0);
+			_emulator.dcpu.updateQueue.addQuery(this, ticksToWait);
 
 			_emulator.dcpu.regs.b = 1;
 			setStateError(StateCode.busy);

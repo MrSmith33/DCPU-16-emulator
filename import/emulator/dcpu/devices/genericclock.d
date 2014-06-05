@@ -72,7 +72,7 @@ public:
 				if (regs.divider != 0)
 				{
 					regs.tickPeriod = cast(ulong)(_dcpu.clockSpeed / (60.0 / regs.divider));
-					_dcpu.updateQueue.addQuery(this, regs.tickPeriod, 0);
+					_dcpu.updateQueue.addQuery(this, regs.tickPeriod);
 				}
 				regs.ticks = 0;
 				regs.initialCycles = _dcpu.regs.cycles;
@@ -96,10 +96,7 @@ public:
 	{
 	}
 
-	/// Must handle previosly posted update query.
-	/// If next updates is not needed must set delay to zero.
-	/// If set to non-zero will be called after delay cycles elapsed with provided message.
-	override void handleUpdateQuery(ref size_t message, ref ulong delay)
+	override void handleUpdateQuery(ref ulong delay)
 	{
 		ulong diff = _dcpu.regs.cycles - regs.initialCycles;
 		ulong totalTicks = diff / regs.tickPeriod;
