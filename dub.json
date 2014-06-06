@@ -6,7 +6,7 @@
 	"license" : "BSL-1.0",
 
 	"dependencies" : {
-		"anchovy" : {"version" : "==0.6.1"}
+		"anchovy" : {"version" : "==0.6.2"}
 	},
 
 	"targetName" : "emulator",

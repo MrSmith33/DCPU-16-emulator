@@ -47,7 +47,7 @@ class EmulatorApplication : Application!GlfwWindow
 	GenericKeyboard!Dcpu keyboard;
 	FloppyDrive!Dcpu floppyDrive;
 	Widget registerView;
-	MemoryView!Dcpu memoryList;
+	MemoryView!Dcpu memoryView;
 	MemoryAnalyzer!Dcpu memAnalyzer;
 
 	bool isRunningForward = true;
@@ -180,19 +180,19 @@ class EmulatorApplication : Application!GlfwWindow
 		printRegisters();
 
 
-		memoryList = new MemoryView!Dcpu(&emulator.dcpu);
-		auto memoryView = context.getWidgetById("memoryview");
-		memoryView.setProperty!("list", List!dstring)(memoryList);
-		memoryView.setProperty!("sliderPos")(0.0);
+		memoryView = new MemoryView!Dcpu(&emulator.dcpu);
+		auto memoryViewWidget = context.getWidgetById("memoryview");
+		memoryViewWidget.setProperty!("list", List!dstring)(memoryView);
+		memoryViewWidget.setProperty!("sliderPos")(0.0);
 
 		auto collapseZerosCheck = context.getWidgetById("collapseZeros");
-		memoryList.collapseZeros = collapseZerosCheck.getPropertyAs!("isChecked", bool);
+		memoryView.collapseZeros = collapseZerosCheck.getPropertyAs!("isChecked", bool);
 		collapseZerosCheck
 			.property("isChecked")
 			.valueChanged
 			.connect((FlexibleObject a, Variant b)
 			{
-				memoryList.collapseZeros = b.get!bool;
+				memoryView.collapseZeros = b.get!bool;
 				updateMemoryView();
 			});
 
@@ -305,8 +305,8 @@ class EmulatorApplication : Application!GlfwWindow
 
 	void updateMemoryView()
 	{
-		memoryList.update();
-		memoryList.listChangedSignal.emit();
+		memoryView.update();
+		memoryView.listChangedSignal.emit();
 	}
 
 	override void closePressed()
