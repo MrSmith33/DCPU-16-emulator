@@ -37,9 +37,9 @@ Enhancement propositions, pull requests and bug reports are highly appreciated.
 
 ### Building
 
-First build derendencies:
+Build derendencies:
 ```
-dub fetch anchovy --version=0.6.1
+dub fetch anchovy --version=0.6.2
 dub build anchovy
 ```
 After that you can use command to build emulator:
