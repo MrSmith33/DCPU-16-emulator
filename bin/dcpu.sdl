@@ -30,17 +30,17 @@ template:mainLayer {
 			vcontainer vexpand=true style="edit" {
 				image id="monitor" minSize="408 312" #"136 104" #"272 208" #"408 312"
 				hcontainer padding=2 spacing=2 {
-					text-button id="unstep1000" stepSize=-1000 text="<<<<"
-					text-button id="unstep100" stepSize=-100 text="<<<"
-					text-button id="unstep10" stepSize=-10 text=" << "
-					text-button id="unstep" stepSize=-1 text=" < "
-					text-button id="runback" text="<-"
-					text-button id="pause" text=" || "
-					text-button id="run" text="->"
-					text-button id="step" stepSize=1 text=" > "
-					text-button id="step10" stepSize=10 text=" >> "
-					text-button id="step100" stepSize=100 text=">>>"
-					text-button id="step1000" stepSize=1000 text=">>>>"
+					text-button id="unstep1000" stepSize=-1000 text="<<<<" tooltip="Unstep 1000"
+					text-button id="unstep100" stepSize=-100 text="<<<" tooltip="Unstep 100"
+					text-button id="unstep10" stepSize=-10 text=" << " tooltip="Unstep 10"
+					text-button id="unstep" stepSize=-1 text=" < " tooltip="Unstep"
+					text-button id="runback" text="<-" tooltip="Run backward"
+					text-button id="pause" text=" || " tooltip="Pause"
+					text-button id="run" text="->" tooltip="Run forward"
+					text-button id="step" stepSize=1 text=" > " tooltip="Step"
+					text-button id="step10" stepSize=10 text=" >> " tooltip="Step 10"
+					text-button id="step100" stepSize=100 text=">>>" tooltip="Step 100"
+					text-button id="step1000" stepSize=1000 text=">>>>" tooltip="Step 1000"
 				}
 			}
 			vcontainer vexpand=true {
@@ -81,7 +81,7 @@ template:text-button extends="button" {
 	}
 
 	tree layout="vertical" padding=2 {
-		label name="label"
+		label name="label" respondsToPointer=false
 	}
 }
 
