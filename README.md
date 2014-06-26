@@ -1,7 +1,7 @@
 DCPU-16 emulator
 ================
 
-![screen1](https://cloud.githubusercontent.com/assets/1129910/2623807/0780eb22-bd09-11e3-85e7-5c52e7fe4686.png)
+![screen3](https://cloud.githubusercontent.com/assets/1129910/3400128/af054176-fd42-11e3-9655-ff2ab7b23463.png)
 
 **Alpha stage**
 ----------------
@@ -14,6 +14,10 @@ Already works:
  - memory view
  - registers view
  - execution by step
+ - reverse debugging
+ - CPU speed editing
+ - Statistics of execution (outputted in console)
+ - Collapsing of zero lines in memory view
 
 Devices implemented:
  - generic clock
@@ -22,7 +26,7 @@ Devices implemented:
  - M35FD floppy drive
 
 Planned features:
- - reverse debugging
+ 
  - assembler (0xSCA compatible)
  - non-standart devices
  - workspaces
